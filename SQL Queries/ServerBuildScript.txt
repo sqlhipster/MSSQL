@@ -1,0 +1,3255 @@
+USE [PTI_DBA]
+GO
+/****** Object:  Table [dbo].[Alert_Email_Config]    Script Date: 02/25/2013 11:46:41 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Alert_Email_Config](
+	[EGID] [int] NOT NULL,
+	[Email_Group] [nvarchar](200) NOT NULL,
+	[Email_Addresses] [nvarchar](max) NOT NULL
+) ON [PRIMARY]
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  Table [dbo].[blocking]    Script Date: 02/25/2013 11:46:53 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[blocking](
+	[tstamp] [datetime] NOT NULL,
+	[spid] [int] NULL,
+	[blocked] [int] NULL,
+	[waittype] [varchar](max) NULL,
+	[waittime] [bigint] NULL,
+	[physical_io] [bigint] NULL,
+	[cpu_in_seconds] [bigint] NULL,
+	[memusage] [bigint] NULL,
+	[name] [nvarchar](max) NOT NULL,
+	[open_tran] [tinyint] NULL,
+	[status] [varchar](max) NULL,
+	[hostname] [varchar](max) NULL,
+	[program_name] [varchar](max) NULL,
+	[cmd] [varchar](max) NULL,
+	[nt_domain] [varchar](max) NULL,
+	[nt_username] [varchar](max) NULL,
+	[loginame] [varchar](max) NULL,
+	[EventType] [varchar](max) NULL,
+	[Parameters] [varchar](max) NULL,
+	[EventInfo] [varchar](max) NULL,
+	[text] [text] NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  Table [dbo].[Daily_Health_Report_Archive]    Script Date: 02/25/2013 11:47:04 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[Daily_Health_Report_Archive](
+	[ServerName] [sql_variant] NULL,
+	[DBName] [sysname] NOT NULL,
+	[RecoveryModel] [varchar](255) NULL,
+	[IsAutoClose] [varchar](255) NULL,
+	[IsAutoShrink] [varchar](255) NULL,
+	[LastFullBackup] [datetime] NOT NULL,
+	[LastTranBackup] [datetime] NOT NULL,
+	[DataSize] [float] NULL,
+	[LogSize] [float] NULL,
+	[LastSuccessfulCheckDB] [datetime] NULL,
+	[VLFCount] [int] NOT NULL,
+	[DBState] [nvarchar](60) NULL,
+	[IsReadOnly] [bit] NULL,
+	[SnapOfDB] [sysname] NULL,
+	[Deadlock_Count] [int] NOT NULL,
+	[Block_Count] [int] NOT NULL,
+	[DateRun] [datetime] NOT NULL DEFAULT (getdate())
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  Table [dbo].[DailyHealthReport_Overrides]    Script Date: 02/25/2013 11:47:14 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[DailyHealthReport_Overrides](
+	[DatabaseName] [nvarchar](100) NOT NULL,
+	[LastFullBackupThresholdDays] [int] NOT NULL,
+	[LastTransBackup_Threshold_Hours] [int] NOT NULL,
+	[LastSuccessfulCheckDB_Threshold_Days] [int] NOT NULL,
+	[VLF_Threshold_Yellow] [int] NOT NULL,
+	[AutoClose_Ignore] [bit] NOT NULL,
+	[AutoShrink_Ignore] [bit] NOT NULL,
+	[State_Ignore] [bit] NOT NULL,
+	[Deadlock_Threshold_Count] [int] NOT NULL,
+	[Block_Threshold_Count] [int] NOT NULL,
+	[VLF_Threshold_Orange] [int] NOT NULL
+) ON [PRIMARY]
+
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  Table [dbo].[Deadlock_Log]    Script Date: 02/25/2013 11:47:24 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Deadlock_Log](
+	[DL_ID] [int] IDENTITY(1,1) NOT NULL,
+	[Database] [nvarchar](200) NOT NULL,
+	[Server] [nvarchar](200) NOT NULL,
+	[Date] [int] NOT NULL,
+	[Time] [int] NOT NULL,
+	[Severity] [int] NOT NULL,
+	[Error] [int] NOT NULL,
+	[Message] [nvarchar](3000) NOT NULL
+) ON [PRIMARY]
+
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  StoredProcedure [dbo].[Perptech_usp_CommandExecute]    Script Date: 02/25/2013 11:47:44 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE PROCEDURE [dbo].[Perptech_usp_CommandExecute]
+
+@Command nvarchar(max),
+@Comment nvarchar(max),
+@Mode int,
+@Execute nvarchar(max)
+
+AS
+
+BEGIN
+
+  ----------------------------------------------------------------------------------------------------
+  --// Set options                                                                                //--
+  ----------------------------------------------------------------------------------------------------
+
+  SET NOCOUNT ON
+
+  SET LOCK_TIMEOUT 3600000
+
+  ----------------------------------------------------------------------------------------------------
+  --// Declare variables                                                                          //--
+  ----------------------------------------------------------------------------------------------------
+
+  DECLARE @StartMessage nvarchar(max)
+  DECLARE @EndMessage nvarchar(max)
+  DECLARE @ErrorMessage nvarchar(max)
+
+  DECLARE @StartTime datetime
+  DECLARE @EndTime datetime
+
+  DECLARE @Error int
+
+  SET @Error = 0
+
+  ----------------------------------------------------------------------------------------------------
+  --// Check input parameters                                                                     //--
+  ----------------------------------------------------------------------------------------------------
+
+  IF @Command IS NULL OR @Command = ''
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @Command is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @Comment IS NULL
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @Comment is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @Mode NOT IN(1,2) OR @Mode IS NULL
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @Mode is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @Execute NOT IN('Y','N') OR @Execute IS NULL
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @Execute is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  ----------------------------------------------------------------------------------------------------
+  --// Check error variable                                                                       //--
+  ----------------------------------------------------------------------------------------------------
+
+  IF @Error <> 0 GOTO ReturnCode
+
+  ----------------------------------------------------------------------------------------------------
+  --// Log initial information                                                                    //--
+  ----------------------------------------------------------------------------------------------------
+
+  SET @StartTime = CONVERT(datetime,CONVERT(nvarchar,GETDATE(),120),120)
+
+  SET @StartMessage = 'DateTime: ' + CONVERT(nvarchar,@StartTime,120) + CHAR(13) + CHAR(10)
+  SET @StartMessage = @StartMessage + 'Command: ' + @Command
+  IF @Comment <> '' SET @StartMessage = @StartMessage + CHAR(13) + CHAR(10) + 'Comment: ' + @Comment
+  SET @StartMessage = REPLACE(@StartMessage,'%','%%')
+  RAISERROR(@StartMessage,10,1) WITH NOWAIT
+
+  ----------------------------------------------------------------------------------------------------
+  --// Execute command                                                                            //--
+  ----------------------------------------------------------------------------------------------------
+
+  IF @Mode = 1 AND @Execute = 'Y'
+  BEGIN
+    EXECUTE(@Command)
+    SET @Error = @@ERROR
+  END
+
+  IF @Mode = 2 AND @Execute = 'Y'
+  BEGIN
+    BEGIN TRY
+      EXECUTE(@Command)
+    END TRY
+    BEGIN CATCH
+      SET @Error = ERROR_NUMBER()
+      SET @ErrorMessage = 'Msg ' + CAST(ERROR_NUMBER() AS nvarchar) + ', ' + ISNULL(ERROR_MESSAGE(),'')
+      RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    END CATCH
+  END
+
+  ----------------------------------------------------------------------------------------------------
+  --// Log completing information                                                                 //--
+  ----------------------------------------------------------------------------------------------------
+
+  SET @EndTime = CONVERT(datetime,CONVERT(varchar,GETDATE(),120),120)
+
+  SET @EndMessage = 'Outcome: ' + CASE WHEN @Execute = 'N' THEN 'Not Executed' WHEN @Error = 0 THEN 'Succeeded' ELSE 'Failed' END + CHAR(13) + CHAR(10)
+  SET @EndMessage = @EndMessage + 'Duration: ' + CASE WHEN DATEDIFF(ss,@StartTime, @EndTime)/(24*3600) > 0 THEN CAST(DATEDIFF(ss,@StartTime, @EndTime)/(24*3600) AS nvarchar) + '.' ELSE '' END + CONVERT(nvarchar,@EndTime - @StartTime,108) + CHAR(13) + CHAR(10)
+  SET @EndMessage = @EndMessage + 'DateTime: ' + CONVERT(nvarchar,@EndTime,120) + CHAR(13) + CHAR(10)
+  SET @EndMessage = REPLACE(@EndMessage,'%','%%')
+  RAISERROR(@EndMessage,10,1) WITH NOWAIT
+
+  ----------------------------------------------------------------------------------------------------
+  --// Return code                                                                                //--
+  ----------------------------------------------------------------------------------------------------
+
+  ReturnCode:
+
+  RETURN @Error
+
+  ----------------------------------------------------------------------------------------------------
+
+END
+
+
+
+
+
+
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  StoredProcedure [dbo].[Perptech_usp_BlockingNotification]    Script Date: 02/25/2013 11:47:35 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+						CREATE Procedure [dbo].[Perptech_usp_BlockingNotification]
+						AS
+						set nocount on
+
+						Declare @dbaEmail as nvarchar(3000)
+						Declare @DBMailProfile nvarchar(200)
+
+						Select @dbaEmail = Email_Addresses from PTI_DBA.dbo.Alert_Email_Config where Email_Group = 'DBA Alerts'
+						
+
+						If (Select COUNT(*) from [MSDB].[dbo].[sysmail_profile]) = 1
+							Begin
+								Select @DBMailProfile = [Name] from [MSDB].[dbo].[sysmail_profile]
+							End
+						Else
+							Begin
+								Print 'Put in Static Mail Profile'
+								Goto TheEnd
+							End
+
+						CREATE TABLE #tbl_fn_get_sql (
+							[dbid] [smallint] NULL ,
+							[objectid] [int] NULL ,
+							[number] [smallint] NULL ,
+							[encrypted] [bit] NOT NULL ,
+							[text] [text] COLLATE SQL_Latin1_General_CP1_CI_AS NULL 
+						) 
+
+						create table #active_spids
+						(
+							spid int,
+							blocked int,
+							waittype varchar(MAX),
+							waittime bigint,
+							physical_io bigint,
+							cpu bigint,
+							memusage bigint,
+							dbid int,
+							open_tran tinyint,
+							status varchar(MAX),
+							hostname varchar(MAX),
+							program_name varchar(MAX),
+							cmd varchar(MAX),
+							nt_domain varchar(MAX),
+							nt_username varchar(MAX),
+							loginame varchar(MAX),
+							[sql_handle] [binary] (40) NOT NULL ,
+							[stmt_start] [int] NOT NULL ,
+							[stmt_end] [int] NOT NULL 
+
+						)
+
+						create table #active_spids_info
+						(
+							spid int,
+							blocked int,
+							waittype varchar(MAX),
+							waittime bigint,
+							physical_io bigint,
+							cpu bigint,
+							memusage bigint,
+							dbid int,
+							open_tran tinyint,
+							status varchar(MAX),
+							hostname varchar(MAX),
+							program_name varchar(MAX),
+							cmd varchar(MAX),
+							nt_domain varchar(MAX),
+							nt_username varchar(MAX),
+							loginame varchar(MAX),
+							[sql_handle] [binary] (40) NOT NULL ,
+							[stmt_start] [int] NOT NULL ,
+							[stmt_end] [int] NOT NULL,
+							EventType varchar(MAX),
+							Parameters varchar(MAX),
+							EventInfo varchar(MAX),
+							[text] [text] COLLATE SQL_Latin1_General_CP1_CI_AS NULL 
+						)
+
+						create table #event_info
+						(
+							spid int,
+							EventType varchar(MAX),
+							Parameters varchar(MAX),
+							EventInfo varchar(MAX)
+						)
+
+
+						DECLARE 
+							@TerminateGatheringDT  datetime -- when to stop gathering
+							, @WaitFor_Interval datetime
+							, @LastRecordingDT datetime
+							, @RecordingDT datetime
+							, @myError int            -- Local copy of @@ERROR
+							, @myRowCount int         -- Local copy of @@RowCount
+							, @msgText nvarchar(MAX) -- for error messages
+							, @dbname varchar(MAX)
+							, @svrname varchar(MAX)	
+							, @datestart as datetime
+							, @Duration datetime -- Duration of data collection
+							, @IntervalSec int -- Approx sec in the gathering interval
+							, @tstamp varchar(MAX)
+							, @spid1 varchar(MAX)
+							, @dbname1 varchar(MAX)
+							, @status varchar(MAX)
+							, @hostname varchar(MAX)
+							, @programname varchar(MAX)
+							, @cmd varchar(MAX)
+							, @nt_domain varchar(MAX)
+							, @nt_username varchar(MAX)
+							, @loginame varchar(MAX)
+							, @text varchar(MAX)
+							, @msg varchar(MAX)
+							, @sub char(40)
+							, @timestamp as datetime
+							, @spid int
+							, @sqlhandle binary(40)
+							, @tsqlhandle as varchar(MAX)
+							, @waittime varchar(MAX)
+							, @waittype varchar(MAX)
+							, @buffer varchar(MAX)
+							, @maxwaittime int
+							, @diffmsec bigint
+						set nocount on
+
+							set @Duration = '00:14:15' -- Duration of data collection
+							set @IntervalSec = 60 -- Approx sec in the gathering interval
+							set @maxwaittime = 58000 -- This is in miliseconds!!!
+							SET @diffmsec = DATEDIFF(ms
+													 , CONVERT(datetime, '00:00:00', 8)
+													 , @Duration)
+
+						SELECT @WaitFor_Interval = DATEADD (s, @IntervalSec , 
+							CONVERT (datetime, '00:00:00', 108)
+														 )
+							 , @TerminateGatheringDT = DATEADD(ms, @diffmsec,getdate())
+
+						WHILE getdate() <= @TerminateGatheringDT BEGIN
+
+						truncate table #active_spids
+						truncate table #active_spids_info
+						truncate table #event_info
+						truncate table #tbl_fn_get_sql
+
+						insert into #active_spids
+						select 
+							spid,
+							blocked,
+							waittype,
+							waittime,
+							physical_io,
+							cpu,
+							[memusage],
+							a.dbid,
+							open_tran,
+							a.status,
+							hostname,
+							program_name,
+							cmd,
+							nt_domain,
+							nt_username,
+							loginame,
+							[sql_handle],
+							[stmt_start],
+							[stmt_end]
+						from
+							(
+								select 
+									spid,
+									blocked,
+									'waittype' = 
+									CASE
+										WHEN waittype = 0x0001 THEN 	'Exclusive table lock'
+										WHEN waittype = 0x0003 THEN 	'Exclusive intent lock'
+										WHEN waittype = 0x0004 THEN 	'Shared table lock'
+										WHEN waittype = 0x0005 THEN 	'Exclusive page lock'
+										WHEN waittype = 0x0006 THEN 	'Shared page lock'
+										WHEN waittype = 0x0007 THEN 	'Update page lock'
+										WHEN waittype = 0x0013 THEN 	'Buffer resource lock (exclusive) request'
+										WHEN waittype = 0x0013 THEN 	'Miscellaneous I/O (sort, audit, direct xact log I/O)'
+										WHEN waittype = 0x0020 THEN 	'Buffer in I/O'
+										WHEN waittype = 0x0022 THEN 	'Buffer being dirtied'
+										WHEN waittype = 0x0023 THEN 	'Buffer being dumped'
+										WHEN waittype = 0x0081 THEN 	'Write the TLog'
+										WHEN waittype = 0x0200 THEN 	'Parallel query coordination'
+										WHEN waittype = 0x0208 THEN 	'Parallel query coordination'
+										WHEN waittype = 0x0420 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0421 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0422 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0423 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0424 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0425 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0800 THEN 	'Network I/O completion'
+										WHEN waittype = 0x8001 THEN 	'Exclusive table lock'
+										WHEN waittype = 0x8003 THEN 	'Exclusive intent lock'
+										WHEN waittype = 0x8004 THEN 	'Shared table lock'
+										WHEN waittype = 0x8005 THEN 	'Exclusive page lock'
+										WHEN waittype = 0x8006 THEN 	'Shared page lock'
+										WHEN waittype = 0x8007 THEN 	'Update page lock'
+										WHEN waittype = 0x8011 THEN 	'Buffer resource lock (shared) request'
+									ELSE	'OLEDB/Miscellaneous'
+									END,
+									waittime,
+									physical_io,
+									cpu,
+									[memusage],
+									dbid,
+									open_tran,
+									status,
+									hostname,
+									program_name,
+									cmd,
+									nt_domain,
+									nt_username,
+									loginame,
+									[sql_handle],
+									[stmt_start],
+									[stmt_end]
+								from 
+									master.dbo.sysprocesses with(NOLOCK)
+								where 
+									blocked > 0 and waittime > @maxwaittime
+								union all
+								select 
+									spid,
+									blocked,
+									'waittype' = 
+									CASE
+										WHEN waittype = 0x0001 THEN 	'Exclusive table lock'
+										WHEN waittype = 0x0003 THEN 	'Exclusive intent lock'
+										WHEN waittype = 0x0004 THEN 	'Shared table lock'
+										WHEN waittype = 0x0005 THEN 	'Exclusive page lock'
+										WHEN waittype = 0x0006 THEN 	'Shared page lock'
+										WHEN waittype = 0x0007 THEN 	'Update page lock'
+										WHEN waittype = 0x0013 THEN 	'Buffer resource lock (exclusive) request'
+										WHEN waittype = 0x0013 THEN 	'Miscellaneous I/O (sort, audit, direct xact log I/O)'
+										WHEN waittype = 0x0020 THEN 	'Buffer in I/O'
+										WHEN waittype = 0x0022 THEN 	'Buffer being dirtied'
+										WHEN waittype = 0x0023 THEN 	'Buffer being dumped'
+										WHEN waittype = 0x0081 THEN 	'Write the TLog'
+										WHEN waittype = 0x0200 THEN 	'Parallel query coordination'
+										WHEN waittype = 0x0208 THEN 	'Parallel query coordination'
+										WHEN waittype = 0x0420 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0421 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0422 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0423 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0424 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0425 THEN 	'Buffer I/O latch'
+										WHEN waittype = 0x0800 THEN 	'Network I/O completion'
+										WHEN waittype = 0x8001 THEN 	'Exclusive table lock'
+										WHEN waittype = 0x8003 THEN 	'Exclusive intent lock'
+										WHEN waittype = 0x8004 THEN 	'Shared table lock'
+										WHEN waittype = 0x8005 THEN 	'Exclusive page lock'
+										WHEN waittype = 0x8006 THEN 	'Shared page lock'
+										WHEN waittype = 0x8007 THEN 	'Update page lock'
+										WHEN waittype = 0x8011 THEN 	'Buffer resource lock (shared) request'
+									ELSE	'OLEDB/Miscellaneous'
+									END,
+									waittime,
+									physical_io,
+									cpu,
+									[memusage],
+									dbid,
+									open_tran,
+									status,
+									hostname,
+									program_name,
+									cmd,
+									nt_domain,
+									nt_username,
+									loginame,
+									[sql_handle],
+									[stmt_start],
+									[stmt_end]
+								from 
+									master.dbo.sysprocesses with(NOLOCK)
+								where
+									spid in
+									( 
+										select 
+											blocked 
+										from 
+											master.dbo.sysprocesses with(NOLOCK)
+										where 
+											blocked > 0 and waittime > @maxwaittime
+									) 
+							) a
+						order by blocked
+
+						--loop through the spids without a cursor
+						while (select count(spid) from #active_spids) > 0
+						begin
+							set @spid = (select top 1 spid from #active_spids order by spid)
+							--grab the top spid
+							insert into #active_spids_info 
+							(
+								spid,
+								blocked,
+								waittype,
+								waittime,
+								physical_io,
+								cpu,
+								[memusage],
+								dbid,
+								open_tran,
+								status,
+								hostname,
+								program_name,
+								cmd,
+								nt_domain,
+								nt_username,
+								loginame,
+								[sql_handle],
+								[stmt_start],
+								[stmt_end] 
+							)
+							select top 1
+								spid,
+								blocked,
+								waittype,
+								waittime,
+								physical_io,
+								cpu,
+								[memusage],
+								dbid,
+								open_tran,
+								status,
+								hostname,
+								program_name,
+								cmd,
+								nt_domain,
+								nt_username,
+								loginame,
+								[sql_handle],
+								[stmt_start],
+								[stmt_end] 
+							from 
+								#active_spids 
+							order by 
+								spid
+
+							insert into #event_info (EventType,Parameters,EventInfo) EXEC('DBCC INPUTBUFFER (' + @spid + ') WITH NO_INFOMSGS')
+							--get the inputbuffer 
+
+							exec('update #event_info set spid = '+@spid+' where spid IS NULL')
+							--add the spid to the input buffer data
+
+							select @sqlhandle = sql_handle from #active_spids where spid = @spid
+
+							insert into #tbl_fn_get_sql 
+							select * from ::fn_get_sql(@sqlhandle)
+
+							UPDATE #active_spids_info 
+								SET 
+								#active_spids_info.text = #tbl_fn_get_sql.text
+								FROM
+									#active_spids_info,#tbl_fn_get_sql
+								WHERE 
+									#active_spids_info.spid = @spid
+
+							truncate table #tbl_fn_get_sql
+
+							delete from #active_spids where spid = @spid
+							--remove the spid processed
+						end
+
+						UPDATE #active_spids_info 
+							SET 
+							#active_spids_info.EventType = #event_info.EventType,
+							#active_spids_info.Parameters = #event_info.Parameters,
+							#active_spids_info.EventInfo = #event_info.EventInfo
+							FROM
+								#active_spids_info, #event_info
+							WHERE 
+								#active_spids_info.spid = #event_info.spid
+						--join all the info into one table
+
+						set @timestamp = getdate()
+						--select statement to return results 
+						insert into PTI_DBA.dbo.blocking
+						select	@timestamp as tstamp,
+							a.spid,
+							a.blocked,
+							a.waittype,
+							a.waittime,
+							a.physical_io,
+							(a.cpu/1000) as cpu_in_seconds,
+							a.[memusage],
+							b.[name],
+							a.open_tran,
+							a.status,
+							a.hostname,
+							a.program_name,
+							a.cmd,
+							a.nt_domain,
+							a.nt_username,
+							a.loginame,
+							a.EventType,
+							a.Parameters,
+							a.EventInfo,
+							a.text
+						from 
+							#active_spids_info a
+						inner join
+							master.dbo.sysdatabases b
+						on
+							a.dbid = b.dbid
+						if ((select max(tstamp) from PTI_DBA.dbo.blocking where blocked = 0) = @timestamp)
+						begin
+							select @sub = 'SQL: Blocking Issues'
+							
+							select 
+								@tstamp = tstamp,
+								@spid1 = spid,
+								@status = status,
+								@hostname = isnull(hostname,''),
+								@programname = isnull(program_name,''),
+								@cmd = isnull(cmd,''),
+								@nt_domain = isnull(nt_domain,''),
+								@nt_username = isnull(nt_username,''),
+								@loginame = isnull(loginame,''),
+								@text = isnull([text],''),
+								@waittime = (select (max(waittime) / 1000)from PTI_DBA.dbo.blocking where tstamp = (select max(tstamp) from PTI_DBA.dbo.blocking)),
+								@waittype = isnull(waittype,''),
+								@buffer = isnull(EventInfo,'')
+							
+							from  
+								PTI_DBA.dbo.blocking 
+							where 
+								tstamp = (
+										select max(tstamp) 
+										from 
+											PTI_DBA.dbo.blocking) and blocked = 0
+
+
+							select @msg ='The process below is at the head of the blocking chain on the listed server:'+char(13)+
+							'__________________________________________________________________________'+char(13)+
+							'TimeStamp: '+@tstamp+char(13)+
+							'SPID: '+@spid1+char(13)+
+							'Host Name: '+@hostname+char(13)+
+							'Command: '+@cmd+char(13)+
+							'Wait Type: '+@waittype+char(13)+
+							'Status: '+@status+char(13)+
+							'Maximum Wait Time For Blocked Thread: '+@waittime+char(13)+char(13)+
+							'Input Buffer: '+@buffer+char(13)+char(13)+
+							'SQL String:'+char(13)+char(13)+
+							'--WARNING CAN BE LONG AND MAY NOT BE THE WHOLE TEXT!!!--'+char(13)+char(13)+
+							@text 
+
+							DECLARE @From varchar(128)
+							SET @From = HOST_NAME() + '@iopo.org'
+							
+							EXEC msdb.dbo.sp_send_dbmail
+							  @profile_name = @DBMailProfile,
+							  @recipients = @dbaEmail,
+							  @subject = @sub,
+							  @body = @msg
+							
+
+						end
+
+						WAITFOR DELAY @WaitFor_Interval   -- delay      
+						END
+
+						drop table #active_spids
+						drop table #active_spids_info
+						drop table #event_info
+						drop table #tbl_fn_get_sql
+						set nocount off
+
+						TheEnd:
+
+
+
+
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  StoredProcedure [dbo].[Perptech_usp_DeadlockLog]    Script Date: 02/25/2013 11:48:18 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+-- =============================================
+-- Author:		<Author,,Name>
+-- Create date: <Create Date,,>
+-- Description:	<Description,,>
+-- =============================================
+CREATE PROCEDURE [dbo].[Perptech_usp_DeadlockLog]
+@DBName nvarchar(200),
+@SrvName nvarchar(200),
+@Date int,
+@Time int,
+@Severity int,
+@Error int,
+@Message nvarchar(3000)
+
+AS
+BEGIN
+
+DECLARE @msg nvarchar(4000)
+DECLARE @From nvarchar(128)
+DECLARE @DL_Total int
+DECLARE @EmailAddress nvarchar(3000)
+
+If Not Exists(Select name from [PTI_DBA].[sys].[objects] where name = 'Deadlock_log')
+	Begin
+		CREATE TABLE [PTI_DBA].[dbo].[Deadlock_Log](
+			[DL_ID] [int] IDENTITY(1,1) NOT NULL,
+			[Database] [nvarchar](200) NOT NULL,
+			[Server] [nvarchar](200) NOT NULL,
+			[Date] [int] NOT NULL,
+			[Time] [int] NOT NULL,
+			[Severity] [int] NOT NULL,
+			[Error] [int] NOT NULL,
+			[Message] [nvarchar](3000) NOT NULL
+		) ON [PRIMARY]
+	End
+
+Insert Into PTI_DBA.dbo.Deadlock_Log
+([Database], [Server], [Date], [Time], [Severity], [Error], [Message])
+Select 
+	@DBName
+	, @SrvName
+	, @Date
+	, @Time
+	, @Severity
+	, @Error
+	, @Message
+
+Select @DL_Total = Count(*) from PTI_DBA.dbo.Deadlock_log
+Where [Date] = @Date and [Time] >= (@Time - 10000)
+
+If 	@DL_Total >= 10
+	Begin
+	
+		SET @From = HOST_NAME() + '@iopo.org'
+
+		Set @msg = '
+		Error: ' + Cast(@Error as nvarchar(300)) + '
+		Severity: ' + Cast(@Severity as nvarchar(300)) + '
+		Date: ' + Cast(@Date as nvarchar(300))+ '
+		Time: ' + Cast(@Time as nvarchar(300)) + '
+		Server: ' + @SrvName + '
+		Database: ' + @DBName + '
+		Message: ' + @Message + ''
+
+		Select @EmailAddress = Email_Addresses from PTI_DBA.dbo.Alert_Email_Config where Email_Group = 'DBA Alerts'
+
+		EXEC msdb.dbo.sp_send_dbmail
+			@profile_name = 'IOPO-Life',
+			@recipients = @EmailAddress,
+			@importance = 'high',
+			@subject = 'SQL Server Excessive Deadlocks Notification',
+			@body = @msg
+    End
+    
+END
+
+
+
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  StoredProcedure [dbo].[Perptech_usp_DiskFreeSpaceAlert]    Script Date: 02/25/2013 11:48:28 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+-- =============================================
+-- Author: Arie Jones
+-- Create date: <Create Date,,>
+-- Description: <Description,,>
+-- =============================================
+--exec dbo.Perptech_usp_DiskFreeSpaceAlert 'hope.foley@pti.net', 9000
+CREATE PROCEDURE [dbo].[Perptech_usp_DiskFreeSpaceAlert]
+
+@OtherDataDriveBenchmark int = 5120
+AS
+/*This procedure sends out an alert message when hard disk space is below a predefined value. This procedure can be scheduled to run daily so that DBA can act quickly to address this issue. */
+-- Make a special value for the c drive
+DECLARE @DriveCBenchmark int 
+DECLARE @MailRecipients varchar(4000)
+
+Select @MailRecipients = Email_Addresses from PTI_DBA.dbo.Alert_Email_Config where Email_Group = 'DBA Alerts'
+
+SET @DriveCBenchmark= 5120
+
+Declare @OrignalDriveBenchmark int 
+
+Set @OrignalDriveBenchmark = @OtherDataDriveBenchmark
+
+IF EXISTS (SELECT * FROM tempdb..sysobjects WHERE id = object_id(N'[tempdb]..[#disk_free_space]'))
+	DROP TABLE #disk_free_space
+
+
+CREATE TABLE #disk_free_space (
+DriveLetter CHAR(1) NOT NULL,
+FreeMB INTEGER NOT NULL)
+DECLARE @DiskFreeSpace INT
+DECLARE @DriveLetter CHAR(1)
+DECLARE @AlertMessage VARCHAR(500)
+DECLARE @MailSubject VARCHAR(100)
+
+/* Populate #disk_free_space with data */
+INSERT INTO #disk_free_space
+EXEC master..xp_fixeddrives
+
+SELECT @DiskFreeSpace = FreeMB FROM #disk_free_space where DriveLetter = 'C'
+
+IF @DiskFreeSpace < @DriveCBenchmark
+	Begin
+		SET @MailSubject = 'Drive C free space is low on ' + @@SERVERNAME
+		SET @AlertMessage = 'Drive C on ' + @@SERVERNAME + ' has only ' + CAST(@DiskFreeSpace AS VARCHAR) + ' MB left. Please free up space on this drive. C drive usually has OS installed on it. Lower space on C could slow down performance of the server'
+		
+		-- Send out email
+		EXEC msdb.dbo.sp_send_dbmail @profile_name = 'IOPO-Life', @recipients = @MailRecipients,
+		@subject = @MailSubject,
+		@body = @AlertMessage
+	End
+	
+DECLARE DriveSpace CURSOR FAST_FORWARD FOR
+select DriveLetter, FreeMB from #disk_free_space where DriveLetter not in ('C')
+
+open DriveSpace
+fetch next from DriveSpace into @DriveLetter, @DiskFreeSpace
+
+WHILE (@@FETCH_STATUS = 0)
+	Begin
+		Set @OtherDataDriveBenchmark = @OrignalDriveBenchmark
+	
+		
+				if @DiskFreeSpace < @OtherDataDriveBenchmark
+					Begin
+						set @MailSubject = 'Drive ' + @DriveLetter + ' free space is low on ' + @@SERVERNAME
+						set @AlertMessage = @DriveLetter + ' has only ' + cast(@DiskFreeSpace as varchar) + ' MB left. Please increase free space for this drive immediately to avoid production issues'
+					
+						-- Send out email
+						EXEC msdb.dbo.sp_send_dbmail 
+							@profile_name = 'IOPO-Life',
+							@recipients = @MailRecipients,
+							@subject = @MailSubject,
+							@body = @AlertMessage
+					End
+			
+			
+		fetch next from DriveSpace into @DriveLetter, @DiskFreeSpace
+	End	
+	
+close DriveSpace
+deallocate DriveSpace
+
+DROP TABLE #disk_free_space
+
+
+
+
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  StoredProcedure [dbo].[Perptech_usp_HistoryClean]    Script Date: 02/25/2013 11:48:36 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+-- =============================================
+-- Author:		Hope Foley
+-- Create date: 9/24/2008
+-- Description:	Check for databases in backup history that 
+-- don't exist
+-- =============================================
+--  EXEC dbo.usp_HistoryClean 
+CREATE PROCEDURE  [dbo].[Perptech_usp_HistoryClean]
+	
+AS
+
+-- Declare variables
+
+DECLARE @DatabaseName VARCHAR(100) 
+
+
+DECLARE NonDBs CURSOR FAST_FORWARD FOR
+
+select a.database_name from msdb.dbo.backupset a left join
+master.dbo.sysdatabases b
+on a.database_name = b.name
+where  b.name is null
+
+open NonDBs
+
+fetch next from NonDBs into @DatabaseName
+
+WHILE (@@FETCH_STATUS = 0)
+
+BEGIN 
+
+exec msdb.dbo.sp_delete_database_backuphistory @DatabaseName
+
+fetch next from NonDBs into @DatabaseName
+
+END
+
+CLOSE NonDBs
+DEALLOCATE NonDBs
+
+
+
+
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  StoredProcedure [dbo].[Perptech_usp_IndexOptimize]    Script Date: 02/25/2013 11:48:42 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+CREATE PROCEDURE [dbo].[Perptech_usp_IndexOptimize]
+
+@Databases nvarchar(max),
+@FragmentationHigh_LOB nvarchar(max) = 'INDEX_REBUILD_OFFLINE',
+@FragmentationHigh_NonLOB nvarchar(max) = 'INDEX_REBUILD_OFFLINE',
+@FragmentationMedium_LOB nvarchar(max) = 'INDEX_REORGANIZE',
+@FragmentationMedium_NonLOB nvarchar(max) = 'INDEX_REORGANIZE',
+@FragmentationLow_LOB nvarchar(max) = 'NOTHING',
+@FragmentationLow_NonLOB nvarchar(max) = 'NOTHING',
+@FragmentationLevel1 int = 5,
+@FragmentationLevel2 int = 30,
+@PageCountLevel int = 1000,
+@SortInTempdb nvarchar(max) = 'N',
+@MaxDOP int = NULL,
+@FillFactor int = NULL,
+@LOBCompaction nvarchar(max) = 'Y',
+@StatisticsSample int = NULL,
+@PartitionLevel nvarchar(max) = 'N',
+@TimeLimit int = NULL,
+@Execute nvarchar(max) = 'Y'
+
+AS
+
+BEGIN
+
+  ----------------------------------------------------------------------------------------------------
+  --// Set options                                                                                //--
+  ----------------------------------------------------------------------------------------------------
+
+  SET NOCOUNT ON
+
+  SET LOCK_TIMEOUT 3600000
+
+  ----------------------------------------------------------------------------------------------------
+  --// Declare variables                                                                          //--
+  ----------------------------------------------------------------------------------------------------
+
+  DECLARE @StartMessage nvarchar(max)
+  DECLARE @EndMessage nvarchar(max)
+  DECLARE @DatabaseMessage nvarchar(max)
+  DECLARE @ErrorMessage nvarchar(max)
+
+  DECLARE @StartTime datetime
+
+  DECLARE @CurrentID int
+  DECLARE @CurrentDatabase nvarchar(max)
+  DECLARE @CurrentIsDatabaseAccessible bit
+  DECLARE @CurrentMirroringRole nvarchar(max)
+
+  DECLARE @CurrentCommandSelect01 nvarchar(max)
+  DECLARE @CurrentCommandSelect02 nvarchar(max)
+  DECLARE @CurrentCommandSelect03 nvarchar(max)
+  DECLARE @CurrentCommandSelect04 nvarchar(max)
+  DECLARE @CurrentCommandSelect05 nvarchar(max)
+
+  DECLARE @CurrentCommand01 nvarchar(max)
+  DECLARE @CurrentCommand02 nvarchar(max)
+
+  DECLARE @CurrentCommandOutput01 int
+  DECLARE @CurrentCommandOutput02 int
+
+  DECLARE @CurrentIxID int
+  DECLARE @CurrentSchemaID int
+  DECLARE @CurrentSchemaName nvarchar(max)
+  DECLARE @CurrentObjectID int
+  DECLARE @CurrentObjectName nvarchar(max)
+  DECLARE @CurrentObjectType nvarchar(max)
+  DECLARE @CurrentIndexID int
+  DECLARE @CurrentIndexName nvarchar(max)
+  DECLARE @CurrentIndexType int
+  DECLARE @CurrentPartitionID bigint
+  DECLARE @CurrentPartitionNumber int
+  DECLARE @CurrentPartitionCount int
+  DECLARE @CurrentIsPartition bit
+  DECLARE @CurrentIndexExists bit
+  DECLARE @CurrentIsLOB bit
+  DECLARE @CurrentAllowPageLocks bit
+  DECLARE @CurrentOnReadOnlyFileGroup bit
+  DECLARE @CurrentFragmentationLevel float
+  DECLARE @CurrentPageCount bigint
+  DECLARE @CurrentAction nvarchar(max)
+  DECLARE @CurrentComment nvarchar(max)
+
+  DECLARE @tmpDatabases TABLE (ID int IDENTITY PRIMARY KEY,
+                               DatabaseName nvarchar(max),
+                               Completed bit)
+
+  DECLARE @tmpIndexes TABLE (IxID int IDENTITY PRIMARY KEY,
+                             SchemaID int,
+                             SchemaName nvarchar(max),
+                             ObjectID int,
+                             ObjectName nvarchar(max),
+                             ObjectType nvarchar(max),
+                             IndexID int,
+                             IndexName nvarchar(max),
+                             IndexType int,
+                             PartitionID bigint,
+                             PartitionNumber int,
+                             PartitionCount int,
+                             Selected bit,
+                             Completed bit)
+
+  DECLARE @tmpIndexExists TABLE ([Count] int)
+
+  DECLARE @tmpIsLOB TABLE ([Count] int)
+
+  DECLARE @tmpAllowPageLocks TABLE ([Count] int)
+
+  DECLARE @tmpOnReadOnlyFileGroup TABLE ([Count] int)
+
+  DECLARE @Actions TABLE ([Action] nvarchar(max))
+
+  INSERT INTO @Actions([Action]) VALUES('INDEX_REBUILD_ONLINE')
+  INSERT INTO @Actions([Action]) VALUES('INDEX_REBUILD_OFFLINE')
+  INSERT INTO @Actions([Action]) VALUES('INDEX_REORGANIZE')
+  INSERT INTO @Actions([Action]) VALUES('STATISTICS_UPDATE')
+  INSERT INTO @Actions([Action]) VALUES('INDEX_REORGANIZE_STATISTICS_UPDATE')
+  INSERT INTO @Actions([Action]) VALUES('NOTHING')
+
+  DECLARE @Error int
+
+  SET @Error = 0
+
+  ----------------------------------------------------------------------------------------------------
+  --// Log initial information                                                                    //--
+  ----------------------------------------------------------------------------------------------------
+
+  SET @StartTime = CONVERT(datetime,CONVERT(nvarchar,GETDATE(),120),120)
+
+  SET @StartMessage = 'DateTime: ' + CONVERT(nvarchar,@StartTime,120) + CHAR(13) + CHAR(10)
+  SET @StartMessage = @StartMessage + 'Server: ' + CAST(SERVERPROPERTY('ServerName') AS nvarchar) + CHAR(13) + CHAR(10)
+  SET @StartMessage = @StartMessage + 'Version: ' + CAST(SERVERPROPERTY('ProductVersion') AS nvarchar) + CHAR(13) + CHAR(10)
+  SET @StartMessage = @StartMessage + 'Edition: ' + CAST(SERVERPROPERTY('Edition') AS nvarchar) + CHAR(13) + CHAR(10)
+  SET @StartMessage = @StartMessage + 'Procedure: ' + QUOTENAME(DB_NAME(DB_ID())) + '.' + (SELECT QUOTENAME(sys.schemas.name) FROM sys.schemas INNER JOIN sys.objects ON sys.schemas.[schema_id] = sys.objects.[schema_id] WHERE [object_id] = @@PROCID) + '.' + QUOTENAME(OBJECT_NAME(@@PROCID)) + CHAR(13) + CHAR(10)
+  SET @StartMessage = @StartMessage + 'Parameters: @Databases = ' + ISNULL('''' + REPLACE(@Databases,'''','''''') + '''','NULL')
+  SET @StartMessage = @StartMessage + ', @FragmentationHigh_LOB = ' + ISNULL('''' + REPLACE(@FragmentationHigh_LOB,'''','''''') + '''','NULL')
+  SET @StartMessage = @StartMessage + ', @FragmentationHigh_NonLOB = ' + ISNULL('''' + REPLACE(@FragmentationHigh_NonLOB,'''','''''') + '''','NULL')
+  SET @StartMessage = @StartMessage + ', @FragmentationMedium_LOB = ' + ISNULL('''' + REPLACE(@FragmentationMedium_LOB,'''','''''') + '''','NULL')
+  SET @StartMessage = @StartMessage + ', @FragmentationMedium_NonLOB = ' + ISNULL('''' + REPLACE(@FragmentationMedium_NonLOB,'''','''''') + '''','NULL')
+  SET @StartMessage = @StartMessage + ', @FragmentationLow_LOB = ' + ISNULL('''' + REPLACE(@FragmentationLow_LOB,'''','''''') + '''','NULL')
+  SET @StartMessage = @StartMessage + ', @FragmentationLow_NonLOB = ' + ISNULL('''' + REPLACE(@FragmentationLow_NonLOB,'''','''''') + '''','NULL')
+  SET @StartMessage = @StartMessage + ', @FragmentationLevel1 = ' + ISNULL(CAST(@FragmentationLevel1 AS nvarchar),'NULL')
+  SET @StartMessage = @StartMessage + ', @FragmentationLevel2 = ' + ISNULL(CAST(@FragmentationLevel2 AS nvarchar),'NULL')
+  SET @StartMessage = @StartMessage + ', @PageCountLevel = ' + ISNULL(CAST(@PageCountLevel AS nvarchar),'NULL')
+  SET @StartMessage = @StartMessage + ', @SortInTempdb = ' + ISNULL('''' + REPLACE(@SortInTempdb,'''','''''') + '''','NULL')
+  SET @StartMessage = @StartMessage + ', @MaxDOP = ' + ISNULL(CAST(@MaxDOP AS nvarchar),'NULL')
+  SET @StartMessage = @StartMessage + ', @FillFactor = ' + ISNULL(CAST(@FillFactor AS nvarchar),'NULL')
+  SET @StartMessage = @StartMessage + ', @LOBCompaction = ' + ISNULL('''' + REPLACE(@LOBCompaction,'''','''''') + '''','NULL')
+  SET @StartMessage = @StartMessage + ', @StatisticsSample = ' + ISNULL(CAST(@StatisticsSample AS nvarchar),'NULL')
+  SET @StartMessage = @StartMessage + ', @PartitionLevel = ' + ISNULL('''' + REPLACE(@PartitionLevel,'''','''''') + '''','NULL')
+  SET @StartMessage = @StartMessage + ', @TimeLimit = ' + ISNULL(CAST(@TimeLimit AS nvarchar),'NULL')
+  SET @StartMessage = @StartMessage + ', @Execute = ' + ISNULL('''' + REPLACE(@Execute,'''','''''') + '''','NULL')
+  SET @StartMessage = @StartMessage + CHAR(13) + CHAR(10)
+  SET @StartMessage = REPLACE(@StartMessage,'%','%%')
+  RAISERROR(@StartMessage,10,1) WITH NOWAIT
+
+  ----------------------------------------------------------------------------------------------------
+  --// Select databases                                                                           //--
+  ----------------------------------------------------------------------------------------------------
+
+  IF @Databases IS NULL OR @Databases = ''
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @Databases is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  INSERT INTO @tmpDatabases (DatabaseName, Completed)
+  SELECT DatabaseName AS DatabaseName,
+         0 AS Completed
+  FROM dbo.DatabaseSelect (@Databases)
+  ORDER BY DatabaseName ASC
+
+  IF @@ERROR <> 0 OR (@@ROWCOUNT = 0 AND @Databases <> 'USER_DATABASES')
+  BEGIN
+    SET @ErrorMessage = 'Error selecting databases.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  ----------------------------------------------------------------------------------------------------
+  --// Check input parameters                                                                     //--
+  ----------------------------------------------------------------------------------------------------
+
+  IF @FragmentationHigh_LOB NOT IN(SELECT [Action] FROM @Actions WHERE [Action] <> 'INDEX_REBUILD_ONLINE')
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @FragmentationHigh_LOB is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @FragmentationHigh_NonLOB NOT IN(SELECT [Action] FROM @Actions WHERE [Action] <> 'INDEX_REBUILD_ONLINE' OR SERVERPROPERTY('EngineEdition') = 3)
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @FragmentationHigh_NonLOB is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @FragmentationMedium_LOB NOT IN(SELECT [Action] FROM @Actions WHERE [Action] <> 'INDEX_REBUILD_ONLINE')
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @FragmentationMedium_LOB is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @FragmentationMedium_NonLOB NOT IN(SELECT [Action] FROM @Actions WHERE [Action] <> 'INDEX_REBUILD_ONLINE' OR SERVERPROPERTY('EngineEdition') = 3)
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @FragmentationMedium_NonLOB is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @FragmentationLow_LOB NOT IN(SELECT [Action] FROM @Actions WHERE [Action] <> 'INDEX_REBUILD_ONLINE')
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @FragmentationLow_LOB is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @FragmentationLow_NonLOB NOT IN(SELECT [Action] FROM @Actions WHERE [Action] <> 'INDEX_REBUILD_ONLINE' OR SERVERPROPERTY('EngineEdition') = 3)
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @FragmentationLow_NonLOB is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF 'INDEX_REBUILD_ONLINE' IN(@FragmentationHigh_NonLOB, @FragmentationMedium_NonLOB, @FragmentationLow_NonLOB) AND SERVERPROPERTY('EngineEdition') <> 3
+  BEGIN
+    SET @ErrorMessage = 'Online rebuild is only supported in Enterprise and Developer Edition.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF 'INDEX_REBUILD_ONLINE' IN(@FragmentationHigh_LOB, @FragmentationMedium_LOB, @FragmentationLow_LOB)
+  BEGIN
+    SET @ErrorMessage = 'Online rebuild is only supported on indexes with no LOB columns.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @FragmentationLevel1 <= 0 OR @FragmentationLevel1 >= 100 OR @FragmentationLevel1 >= @FragmentationLevel2 OR @FragmentationLevel1 IS NULL
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @FragmentationLevel1 is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @FragmentationLevel2 <= 0 OR @FragmentationLevel2 >= 100 OR @FragmentationLevel2 <= @FragmentationLevel1 OR @FragmentationLevel2 IS NULL
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @FragmentationLevel2 is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @PageCountLevel < 0 OR @PageCountLevel IS NULL
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @PageCountLevel is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @SortInTempdb NOT IN('Y','N') OR @SortInTempdb IS NULL
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @SortInTempdb is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @MaxDOP < 0 OR @MaxDOP > 64 OR @MaxDOP > (SELECT cpu_count FROM sys.dm_os_sys_info) OR (@MaxDOP > 1 AND SERVERPROPERTY('EngineEdition') <> 3)
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @MaxDOP is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @MaxDOP > 1 AND SERVERPROPERTY('EngineEdition') <> 3
+  BEGIN
+    SET @ErrorMessage = 'Parallel index operations are only supported in Enterprise and Developer Edition.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @FillFactor <= 0 OR @FillFactor > 100
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @FillFactor is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @LOBCompaction NOT IN('Y','N') OR @LOBCompaction IS NULL
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @LOBCompaction is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @StatisticsSample <= 0 OR @StatisticsSample  > 100
+  OR (@StatisticsSample IS NOT NULL AND 'INDEX_REORGANIZE_STATISTICS_UPDATE' NOT IN(@FragmentationHigh_LOB, @FragmentationHigh_NonLOB, @FragmentationMedium_LOB, @FragmentationMedium_NonLOB, @FragmentationLow_LOB, @FragmentationLow_NonLOB) AND 'STATISTICS_UPDATE' NOT IN(@FragmentationHigh_LOB, @FragmentationHigh_NonLOB, @FragmentationMedium_LOB, @FragmentationMedium_NonLOB, @FragmentationLow_LOB, @FragmentationLow_NonLOB))
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @StatisticsSample is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @PartitionLevel NOT IN('Y','N') OR @PartitionLevel IS NULL OR (@PartitionLevel = 'Y' AND SERVERPROPERTY('EngineEdition') <> 3)
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @PartitionLevel is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @PartitionLevel = 'Y' AND SERVERPROPERTY('EngineEdition') <> 3
+  BEGIN
+    SET @ErrorMessage = 'Table partitioning is only supported in Enterprise and Developer Edition.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @TimeLimit < 0
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @TimeLimit is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  IF @Execute NOT IN('Y','N') OR @Execute IS NULL
+  BEGIN
+    SET @ErrorMessage = 'The value for parameter @Execute is not supported.' + CHAR(13) + CHAR(10)
+    RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+    SET @Error = @@ERROR
+  END
+
+  ----------------------------------------------------------------------------------------------------
+  --// Check error variable                                                                       //--
+  ----------------------------------------------------------------------------------------------------
+
+  IF @Error <> 0 GOTO Logging
+
+  ----------------------------------------------------------------------------------------------------
+  --// Execute commands                                                                           //--
+  ----------------------------------------------------------------------------------------------------
+
+  WHILE EXISTS (SELECT * FROM @tmpDatabases WHERE Completed = 0)
+  BEGIN
+
+    SELECT TOP 1 @CurrentID = ID,
+                 @CurrentDatabase = DatabaseName
+    FROM @tmpDatabases
+    WHERE Completed = 0
+    ORDER BY ID ASC
+
+    IF EXISTS (SELECT * FROM sys.database_recovery_status WHERE database_id = DB_ID(@CurrentDatabase) AND database_guid IS NOT NULL)
+    BEGIN
+      SET @CurrentIsDatabaseAccessible = 1
+    END
+    ELSE
+    BEGIN
+      SET @CurrentIsDatabaseAccessible = 0
+    END
+
+    SELECT @CurrentMirroringRole = mirroring_role_desc
+    FROM sys.database_mirroring
+    WHERE database_id = DB_ID(@CurrentDatabase)
+
+    -- Set database message
+    SET @DatabaseMessage = 'DateTime: ' + CONVERT(nvarchar,GETDATE(),120) + CHAR(13) + CHAR(10)
+    SET @DatabaseMessage = @DatabaseMessage + 'Database: ' + QUOTENAME(@CurrentDatabase) + CHAR(13) + CHAR(10)
+    SET @DatabaseMessage = @DatabaseMessage + 'Status: ' + CAST(DATABASEPROPERTYEX(@CurrentDatabase,'Status') AS nvarchar) + CHAR(13) + CHAR(10)
+    SET @DatabaseMessage = @DatabaseMessage + 'Mirroring role: ' + ISNULL(@CurrentMirroringRole,'None') + CHAR(13) + CHAR(10)
+    SET @DatabaseMessage = @DatabaseMessage + 'Standby: ' + CASE WHEN DATABASEPROPERTYEX(@CurrentDatabase,'IsInStandBy') = 1 THEN 'Yes' ELSE 'No' END + CHAR(13) + CHAR(10)
+    SET @DatabaseMessage = @DatabaseMessage + 'Updateability: ' + CAST(DATABASEPROPERTYEX(@CurrentDatabase,'Updateability') AS nvarchar) + CHAR(13) + CHAR(10)
+    SET @DatabaseMessage = @DatabaseMessage + 'User access: ' + CAST(DATABASEPROPERTYEX(@CurrentDatabase,'UserAccess') AS nvarchar) + CHAR(13) + CHAR(10)
+    SET @DatabaseMessage = @DatabaseMessage + 'Is accessible: ' + CASE WHEN @CurrentIsDatabaseAccessible = 1 THEN 'Yes' ELSE 'No' END + CHAR(13) + CHAR(10)
+    SET @DatabaseMessage = @DatabaseMessage + 'Recovery model: ' + CAST(DATABASEPROPERTYEX(@CurrentDatabase,'Recovery') AS nvarchar) + CHAR(13) + CHAR(10)
+    SET @DatabaseMessage = REPLACE(@DatabaseMessage,'%','%%')
+    RAISERROR(@DatabaseMessage,10,1) WITH NOWAIT
+
+    IF DATABASEPROPERTYEX(@CurrentDatabase,'Status') = 'ONLINE'
+    AND NOT (DATABASEPROPERTYEX(@CurrentDatabase,'UserAccess') = 'SINGLE_USER' AND @CurrentIsDatabaseAccessible = 0)
+    AND DATABASEPROPERTYEX(@CurrentDatabase,'Updateability') = 'READ_WRITE'
+    BEGIN
+
+      -- Select indexes in the current database
+      IF @PartitionLevel = 'N' SET @CurrentCommandSelect01 = 'SELECT ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[schema_id], ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[name], ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[object_id], ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[name], RTRIM(' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[type]), ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.index_id, ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[name], ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[type], NULL AS partition_id, NULL AS partition_number, NULL AS partition_count, 0 AS selected, 0 AS completed FROM ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.objects ON ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[object_id] = ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[object_id] INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas ON ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[schema_id] = ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[schema_id] WHERE ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[type] IN(''U'',''V'') AND ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.is_ms_shipped = 0 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[type] IN(1,2,3,4) AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.is_disabled = 0 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.is_hypothetical = 0 ORDER BY ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[schema_id] ASC, ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[object_id] ASC, ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.index_id ASC'
+      IF @PartitionLevel = 'Y' SET @CurrentCommandSelect01 = 'SELECT ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[schema_id], ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[name], ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[object_id], ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[name], RTRIM(' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[type]), ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.index_id, ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[name], ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[type], ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions.partition_id, ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions.partition_number, IndexPartitions.partition_count, 0 AS selected, 0 AS completed FROM ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.objects ON ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[object_id] = ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[object_id] INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas ON ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[schema_id] = ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[schema_id] LEFT OUTER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions ON ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[object_id] = ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions.[object_id] AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.index_id = ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions.index_id LEFT OUTER JOIN (SELECT [object_id], index_id, COUNT(*) AS partition_count FROM ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions GROUP BY [object_id], index_id) IndexPartitions ON ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions.[object_id] = IndexPartitions.[object_id] AND ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions.[index_id] = IndexPartitions.[index_id] WHERE ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[type] IN(''U'',''V'') AND ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.is_ms_shipped = 0 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[type] IN(1,2,3,4) AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.is_disabled = 0 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.is_hypothetical = 0 ORDER BY ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[schema_id] ASC, ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[object_id] ASC, ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.index_id ASC, ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions.partition_number ASC'
+
+      INSERT INTO @tmpIndexes (SchemaID, SchemaName, ObjectID, ObjectName, ObjectType, IndexID, IndexName, IndexType, PartitionID, PartitionNumber, PartitionCount, Selected, Completed)
+      EXECUTE(@CurrentCommandSelect01)
+
+      UPDATE @tmpIndexes
+      SET Selected = 1
+      FROM @tmpIndexes
+
+      WHILE EXISTS (SELECT * FROM @tmpIndexes WHERE Selected = 1 AND Completed = 0)
+      BEGIN
+
+        SELECT TOP 1 @CurrentIxID = IxID,
+                     @CurrentSchemaID = SchemaID,
+                     @CurrentSchemaName = SchemaName,
+                     @CurrentObjectID = ObjectID,
+                     @CurrentObjectName = ObjectName,
+                     @CurrentObjectType = ObjectType,
+                     @CurrentIndexID = IndexID,
+                     @CurrentIndexName = IndexName,
+                     @CurrentIndexType = IndexType,
+                     @CurrentPartitionID = PartitionID,
+                     @CurrentPartitionNumber = PartitionNumber,
+                     @CurrentPartitionCount = PartitionCount
+        FROM @tmpIndexes
+        WHERE Selected = 1
+        AND Completed = 0
+        ORDER BY IxID ASC
+
+        -- Is the index a partition?
+        IF @CurrentPartitionNumber IS NULL OR @CurrentPartitionCount = 1 BEGIN SET @CurrentIsPartition = 0 END ELSE BEGIN SET @CurrentIsPartition = 1 END
+
+        -- Does the index exist?
+        IF @CurrentIsPartition = 0 SET @CurrentCommandSelect02 = 'SELECT COUNT(*) FROM ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.objects ON ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[object_id] = ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[object_id] INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas ON ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[schema_id] = ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[schema_id] WHERE ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[type] IN(''U'',''V'') AND ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.is_ms_shipped = 0 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[type] IN(1,2,3,4) AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.is_disabled = 0 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.is_hypothetical = 0 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[schema_id] = ' + CAST(@CurrentSchemaID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[name] = N' + QUOTENAME(@CurrentSchemaName,'''') + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[object_id] = ' + CAST(@CurrentObjectID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[name] = N' + QUOTENAME(@CurrentObjectName,'''') + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[type] = N' + QUOTENAME(@CurrentObjectType,'''') + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.index_id = ' + CAST(@CurrentIndexID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[name] = N' + QUOTENAME(@CurrentIndexName,'''') + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[type] = ' + CAST(@CurrentIndexType AS nvarchar)
+        IF @CurrentIsPartition = 1 SET @CurrentCommandSelect02 = 'SELECT COUNT(*) FROM ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.objects ON ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[object_id] = ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[object_id] INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas ON ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[schema_id] = ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[schema_id] INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions ON ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[object_id] = ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions.[object_id] AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.index_id = ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions.index_id WHERE ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[type] IN(''U'',''V'') AND ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.is_ms_shipped = 0 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[type] IN(1,2,3,4) AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.is_disabled = 0 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.is_hypothetical = 0 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[schema_id] = ' + CAST(@CurrentSchemaID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.schemas.[name] = N' + QUOTENAME(@CurrentSchemaName,'''') + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[object_id] = ' + CAST(@CurrentObjectID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[name] = N' + QUOTENAME(@CurrentObjectName,'''') + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.objects.[type] = N' + QUOTENAME(@CurrentObjectType,'''') + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.index_id = ' + CAST(@CurrentIndexID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[name] = N' + QUOTENAME(@CurrentIndexName,'''') + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[type] = ' + CAST(@CurrentIndexType AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions.partition_id = ' + CAST(@CurrentPartitionID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.partitions.partition_number = ' + CAST(@CurrentPartitionNumber AS nvarchar)
+
+        INSERT INTO @tmpIndexExists ([Count])
+        EXECUTE(@CurrentCommandSelect02)
+
+        IF (SELECT [Count] FROM @tmpIndexExists) > 0 BEGIN SET @CurrentIndexExists = 1 END ELSE BEGIN SET @CurrentIndexExists = 0 END
+
+        IF @CurrentIndexExists = 0 GOTO NoAction
+
+        -- Does the index contain a LOB?
+        IF @CurrentIndexType = 1 SET @CurrentCommandSelect03 = 'SELECT COUNT(*) FROM ' + QUOTENAME(@CurrentDatabase) + '.sys.columns INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.types ON ' + QUOTENAME(@CurrentDatabase) + '.sys.columns.system_type_id = ' + QUOTENAME(@CurrentDatabase) + '.sys.types.user_type_id OR (' + QUOTENAME(@CurrentDatabase) + '.sys.columns.user_type_id = ' + QUOTENAME(@CurrentDatabase) + '.sys.types.user_type_id AND '+ QUOTENAME(@CurrentDatabase) + '.sys.types.is_assembly_type = 1) WHERE ' + QUOTENAME(@CurrentDatabase) + '.sys.columns.[object_id] = ' + CAST(@CurrentObjectID AS nvarchar) + ' AND (' + QUOTENAME(@CurrentDatabase) + '.sys.types.name IN(''xml'',''image'',''text'',''ntext'') OR (' + QUOTENAME(@CurrentDatabase) + '.sys.types.name IN(''varchar'',''nvarchar'',''varbinary'') AND ' + QUOTENAME(@CurrentDatabase) + '.sys.columns.max_length = -1) OR (' + QUOTENAME(@CurrentDatabase) + '.sys.types.is_assembly_type = 1 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.columns.max_length = -1))'
+        IF @CurrentIndexType = 2 SET @CurrentCommandSelect03 = 'SELECT COUNT(*) FROM ' + QUOTENAME(@CurrentDatabase) + '.sys.index_columns INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.columns ON ' + QUOTENAME(@CurrentDatabase) + '.sys.index_columns.[object_id] = ' + QUOTENAME(@CurrentDatabase) + '.sys.columns.[object_id] AND ' + QUOTENAME(@CurrentDatabase) + '.sys.index_columns.column_id = ' + QUOTENAME(@CurrentDatabase) + '.sys.columns.column_id INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.types ON ' + QUOTENAME(@CurrentDatabase) + '.sys.columns.system_type_id = ' + QUOTENAME(@CurrentDatabase) + '.sys.types.user_type_id OR (' + QUOTENAME(@CurrentDatabase) + '.sys.columns.user_type_id = ' + QUOTENAME(@CurrentDatabase) + '.sys.types.user_type_id AND ' + QUOTENAME(@CurrentDatabase) + '.sys.types.is_assembly_type = 1) WHERE ' + QUOTENAME(@CurrentDatabase) + '.sys.index_columns.[object_id] = ' + CAST(@CurrentObjectID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.index_columns.index_id = ' + CAST(@CurrentIndexID AS nvarchar) + ' AND (' + QUOTENAME(@CurrentDatabase) + '.sys.types.[name] IN(''xml'',''image'',''text'',''ntext'') OR (' + QUOTENAME(@CurrentDatabase) + '.sys.types.[name] IN(''varchar'',''nvarchar'',''varbinary'') AND ' + QUOTENAME(@CurrentDatabase) + '.sys.columns.max_length = -1) OR (' + QUOTENAME(@CurrentDatabase) + '.sys.types.is_assembly_type = 1 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.columns.max_length = -1))'
+        IF @CurrentIndexType = 3 SET @CurrentCommandSelect03 = 'SELECT 1'
+        IF @CurrentIndexType = 4 SET @CurrentCommandSelect03 = 'SELECT 1'
+
+        INSERT INTO @tmpIsLOB ([Count])
+        EXECUTE(@CurrentCommandSelect03)
+
+        IF (SELECT [Count] FROM @tmpIsLOB) > 0 BEGIN SET @CurrentIsLOB = 1 END ELSE BEGIN SET @CurrentIsLOB = 0 END
+
+        -- Is Allow_Page_Locks set to On?
+        SET @CurrentCommandSelect04 = 'SELECT COUNT(*) FROM ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes WHERE ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[object_id] = ' + CAST(@CurrentObjectID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[index_id] = ' + CAST(@CurrentIndexID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[allow_page_locks] = 1'
+
+        INSERT INTO @tmpAllowPageLocks ([Count])
+        EXECUTE(@CurrentCommandSelect04)
+
+        IF (SELECT [Count] FROM @tmpAllowPageLocks) > 0 BEGIN SET @CurrentAllowPageLocks = 1 END ELSE BEGIN SET @CurrentAllowPageLocks = 0 END
+
+        -- Is the index on a read-only filegroup?
+        SET @CurrentCommandSelect05 = 'SELECT COUNT(*) FROM (SELECT ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups.data_space_id FROM ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.destination_data_spaces ON ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.data_space_id = ' + QUOTENAME(@CurrentDatabase) + '.sys.destination_data_spaces.partition_scheme_id INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups ON ' + QUOTENAME(@CurrentDatabase) + '.sys.destination_data_spaces.data_space_id = ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups.data_space_id WHERE ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups.is_read_only = 1 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[object_id] = ' + CAST(@CurrentObjectID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[index_id] = ' + CAST(@CurrentIndexID AS nvarchar)
+        IF @CurrentIsPartition = 1 SET @CurrentCommandSelect05 = @CurrentCommandSelect05 + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.destination_data_spaces.destination_id = ' + CAST(@CurrentPartitionNumber AS nvarchar)
+        SET @CurrentCommandSelect05 = @CurrentCommandSelect05 + ' UNION SELECT ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups.data_space_id FROM ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups ON ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.data_space_id = ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups.data_space_id WHERE ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups.is_read_only = 1 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[object_id] = ' + CAST(@CurrentObjectID AS nvarchar) + ' AND ' + QUOTENAME(@CurrentDatabase) + '.sys.indexes.[index_id] = ' + CAST(@CurrentIndexID AS nvarchar)
+        IF @CurrentIndexType = 1 SET @CurrentCommandSelect05 = @CurrentCommandSelect05 + ' UNION SELECT ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups.data_space_id FROM ' + QUOTENAME(@CurrentDatabase) + '.sys.tables INNER JOIN ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups ON ' + QUOTENAME(@CurrentDatabase) + '.sys.tables.lob_data_space_id = ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups.data_space_id WHERE ' + QUOTENAME(@CurrentDatabase) + '.sys.filegroups.is_read_only = 1 AND ' + QUOTENAME(@CurrentDatabase) + '.sys.tables.[object_id] = ' + CAST(@CurrentObjectID AS nvarchar)
+        SET @CurrentCommandSelect05 = @CurrentCommandSelect05 + ') ReadOnlyFileGroups'
+
+        INSERT INTO @tmpOnReadOnlyFileGroup ([Count])
+        EXECUTE(@CurrentCommandSelect05)
+
+        IF (SELECT [Count] FROM @tmpOnReadOnlyFileGroup) > 0 BEGIN SET @CurrentOnReadOnlyFileGroup = 1 END ELSE BEGIN SET @CurrentOnReadOnlyFileGroup = 0 END
+
+        -- Is the index fragmented?
+        SELECT @CurrentFragmentationLevel = MAX(avg_fragmentation_in_percent),
+               @CurrentPageCount = SUM(page_count)
+        FROM sys.dm_db_index_physical_stats(DB_ID(@CurrentDatabase), @CurrentObjectID, @CurrentIndexID, @CurrentPartitionNumber, 'LIMITED')
+        WHERE alloc_unit_type_desc = 'IN_ROW_DATA'
+        AND index_level = 0
+        SET @Error = @@ERROR
+        IF @Error = 1222
+        BEGIN
+          SET @ErrorMessage = 'The dynamic management view sys.dm_db_index_physical_stats is locked on the index ' + QUOTENAME(@CurrentSchemaName) + '.' + QUOTENAME(@CurrentObjectName) + '.' + QUOTENAME(@CurrentIndexName) + '.' + CHAR(13) + CHAR(10)
+          SET @ErrorMessage = REPLACE(@ErrorMessage,'%','%%')
+          RAISERROR(@ErrorMessage,16,1) WITH NOWAIT
+          GOTO NoAction
+        END
+
+        -- Decide action
+        SELECT @CurrentAction = CASE
+        WHEN (@CurrentIsLOB = 1 OR @CurrentIsPartition = 1) AND @CurrentFragmentationLevel >= @FragmentationLevel2 AND @CurrentPageCount >= @PageCountLevel THEN @FragmentationHigh_LOB
+        WHEN (@CurrentIsLOB = 0 AND @CurrentIsPartition = 0) AND @CurrentFragmentationLevel >= @FragmentationLevel2 AND @CurrentPageCount >= @PageCountLevel THEN @FragmentationHigh_NonLOB
+        WHEN (@CurrentIsLOB = 1 OR @CurrentIsPartition = 1) AND @CurrentFragmentationLevel >= @FragmentationLevel1 AND @CurrentFragmentationLevel < @FragmentationLevel2 AND @CurrentPageCount >= @PageCountLevel THEN @FragmentationMedium_LOB
+        WHEN (@CurrentIsLOB = 0 AND @CurrentIsPartition = 0) AND @CurrentFragmentationLevel >= @FragmentationLevel1 AND @CurrentFragmentationLevel < @FragmentationLevel2 AND @CurrentPageCount >= @PageCountLevel THEN @FragmentationMedium_NonLOB
+        WHEN (@CurrentIsLOB = 1 OR @CurrentIsPartition = 1) AND (@CurrentFragmentationLevel < @FragmentationLevel1 OR @CurrentPageCount < @PageCountLevel) THEN @FragmentationLow_LOB
+        WHEN (@CurrentIsLOB = 0 AND @CurrentIsPartition = 0) AND (@CurrentFragmentationLevel < @FragmentationLevel1 OR @CurrentPageCount < @PageCountLevel) THEN @FragmentationLow_NonLOB
+        END
+
+        -- Reorganizing an index is only allowed if Allow_Page_Locks is set to On
+        IF @CurrentAction IN('INDEX_REORGANIZE','INDEX_REORGANIZE_STATISTICS_UPDATE') AND @CurrentAllowPageLocks = 0
+        BEGIN
+          SELECT @CurrentAction = CASE
+          WHEN (@CurrentIsLOB = 0 AND @CurrentIsPartition = 0) AND 'INDEX_REBUILD_ONLINE' IN(@FragmentationHigh_NonLOB, @FragmentationMedium_NonLOB, @FragmentationLow_NonLOB) THEN 'INDEX_REBUILD_ONLINE'
+          WHEN (@CurrentIsLOB = 0 AND @CurrentIsPartition = 0) AND 'INDEX_REBUILD_OFFLINE' IN(@FragmentationHigh_NonLOB, @FragmentationMedium_NonLOB, @FragmentationLow_NonLOB) THEN 'INDEX_REBUILD_OFFLINE'
+          WHEN (@CurrentIsLOB = 1 OR @CurrentIsPartition = 1) AND 'INDEX_REBUILD_OFFLINE' IN(@FragmentationHigh_LOB, @FragmentationMedium_LOB, @FragmentationLow_LOB) THEN 'INDEX_REBUILD_OFFLINE'
+          ELSE 'NOTHING'
+          END
+        END
+
+        -- Create comment
+        SET @CurrentComment = 'ObjectType: ' + CASE WHEN @CurrentObjectType = 'U' THEN 'Table' WHEN @CurrentObjectType = 'V' THEN 'View' ELSE 'N/A' END + ', '
+        SET @CurrentComment = @CurrentComment + 'IndexType: ' + CASE WHEN @CurrentIndexType = 1 THEN 'Clustered' WHEN @CurrentIndexType = 2 THEN 'NonClustered' WHEN @CurrentIndexType = 3 THEN 'XML' WHEN @CurrentIndexType = 4 THEN 'Spatial' ELSE 'N/A' END + ', '
+        SET @CurrentComment = @CurrentComment + 'LOB: ' + CASE WHEN @CurrentIsLOB = 1 THEN 'Yes' WHEN @CurrentIsLOB = 0 THEN 'No' ELSE 'N/A' END + ', '
+        SET @CurrentComment = @CurrentComment + 'AllowPageLocks: ' + CASE WHEN @CurrentAllowPageLocks = 1 THEN 'Yes' WHEN @CurrentAllowPageLocks = 0 THEN 'No' ELSE 'N/A' END + ', '
+        SET @CurrentComment = @CurrentComment + 'PageCount: ' + CAST(@CurrentPageCount AS nvarchar) + ', '
+        SET @CurrentComment = @CurrentComment + 'Fragmentation: ' + CAST(@CurrentFragmentationLevel AS nvarchar)
+
+        -- Check time limit
+        IF GETDATE() >= DATEADD(ss,@TimeLimit,@StartTime)
+        BEGIN
+          SET @Execute = 'N'
+        END
+
+        IF @CurrentAction IN('INDEX_REBUILD_ONLINE','INDEX_REBUILD_OFFLINE','INDEX_REORGANIZE','INDEX_REORGANIZE_STATISTICS_UPDATE') AND @CurrentOnReadOnlyFileGroup = 0
+        BEGIN
+          SET @CurrentCommand01 = 'ALTER INDEX ' + QUOTENAME(@CurrentIndexName) + ' ON ' + QUOTENAME(@CurrentDatabase) + '.' + QUOTENAME(@CurrentSchemaName) + '.' + QUOTENAME(@CurrentObjectName)
+
+          IF @CurrentAction IN('INDEX_REBUILD_ONLINE','INDEX_REBUILD_OFFLINE')
+          BEGIN
+            SET @CurrentCommand01 = @CurrentCommand01 + ' REBUILD'
+            IF @CurrentIsPartition = 1 SET @CurrentCommand01 = @CurrentCommand01 + ' PARTITION = ' + CAST(@CurrentPartitionNumber AS nvarchar)
+            SET @CurrentCommand01 = @CurrentCommand01 + ' WITH ('
+            IF @SortInTempdb = 'Y' SET @CurrentCommand01 = @CurrentCommand01 + 'SORT_IN_TEMPDB = ON'
+            IF @SortInTempdb = 'N' SET @CurrentCommand01 = @CurrentCommand01 + 'SORT_IN_TEMPDB = OFF'
+            IF @CurrentAction = 'INDEX_REBUILD_ONLINE' AND @CurrentIsPartition = 0 SET @CurrentCommand01 = @CurrentCommand01 + ', ONLINE = ON'
+            IF @CurrentAction = 'INDEX_REBUILD_OFFLINE' AND @CurrentIsPartition = 0 SET @CurrentCommand01 = @CurrentCommand01 + ', ONLINE = OFF'
+            IF @MaxDOP IS NOT NULL SET @CurrentCommand01 = @CurrentCommand01 + ', MAXDOP = ' + CAST(@MaxDOP AS nvarchar)
+            IF @FillFactor IS NOT NULL AND @CurrentIsPartition = 0 SET @CurrentCommand01 = @CurrentCommand01 + ', FILLFACTOR = ' + CAST(@FillFactor AS nvarchar)
+            SET @CurrentCommand01 = @CurrentCommand01 + ')'
+          END
+
+          IF @CurrentAction IN('INDEX_REORGANIZE','INDEX_REORGANIZE_STATISTICS_UPDATE')
+          BEGIN
+            SET @CurrentCommand01 = @CurrentCommand01 + ' REORGANIZE'
+            IF @CurrentIsPartition = 1 SET @CurrentCommand01 = @CurrentCommand01 + ' PARTITION = ' + CAST(@CurrentPartitionNumber AS nvarchar)
+            SET @CurrentCommand01 = @CurrentCommand01 + ' WITH ('
+            IF @LOBCompaction = 'Y' SET @CurrentCommand01 = @CurrentCommand01 + 'LOB_COMPACTION = ON'
+            IF @LOBCompaction = 'N' SET @CurrentCommand01 = @CurrentCommand01 + 'LOB_COMPACTION = OFF'
+            SET @CurrentCommand01 = @CurrentCommand01 + ')'
+          END
+
+          EXECUTE @CurrentCommandOutput01 = [dbo].[PerpTech_usp_CommandExecute] @CurrentCommand01, @CurrentComment, 2, @Execute
+          SET @Error = @@ERROR
+          IF @Error <> 0 SET @CurrentCommandOutput01 = @Error
+        END
+
+        IF @CurrentAction IN('INDEX_REORGANIZE_STATISTICS_UPDATE','STATISTICS_UPDATE') AND @CurrentOnReadOnlyFileGroup = 0 AND @CurrentIndexType IN(1,2) AND @CurrentIsPartition = 0
+        BEGIN
+          SET @CurrentCommand02 = 'UPDATE STATISTICS ' + QUOTENAME(@CurrentDatabase) + '.' + QUOTENAME(@CurrentSchemaName) + '.' + QUOTENAME(@CurrentObjectName) + ' ' + QUOTENAME(@CurrentIndexName)
+          IF @StatisticsSample = 100 SET @CurrentCommand02 = @CurrentCommand02 + ' WITH FULLSCAN'
+          IF @StatisticsSample IS NOT NULL AND @StatisticsSample <> 100 SET @CurrentCommand02 = @CurrentCommand02 + ' WITH SAMPLE ' + CAST(@StatisticsSample AS nvarchar) + ' PERCENT'
+
+          EXECUTE @CurrentCommandOutput02 = [dbo].[PerpTech_usp_CommandExecute] @CurrentCommand02, '', 2, @Execute
+          SET @Error = @@ERROR
+          IF @Error <> 0 SET @CurrentCommandOutput02 = @Error
+        END
+
+        NoAction:
+
+        -- Update that the index is completed
+        UPDATE @tmpIndexes
+        SET Completed = 1
+        WHERE IxID = @CurrentIxID
+
+        -- Clear variables
+        SET @CurrentCommandSelect02 = NULL
+        SET @CurrentCommandSelect03 = NULL
+        SET @CurrentCommandSelect04 = NULL
+        SET @CurrentCommandSelect05 = NULL
+
+        SET @CurrentCommand01 = NULL
+        SET @CurrentCommand02 = NULL
+
+        SET @CurrentCommandOutput01 = NULL
+        SET @CurrentCommandOutput02 = NULL
+
+        SET @CurrentIxID = NULL
+        SET @CurrentSchemaID = NULL
+        SET @CurrentSchemaName = NULL
+        SET @CurrentObjectID = NULL
+        SET @CurrentObjectName = NULL
+        SET @CurrentObjectType = NULL
+        SET @CurrentIndexID = NULL
+        SET @CurrentIndexName = NULL
+        SET @CurrentIndexType = NULL
+        SET @CurrentPartitionID = NULL
+        SET @CurrentPartitionNumber = NULL
+        SET @CurrentPartitionCount = NULL
+        SET @CurrentIsPartition = NULL
+        SET @CurrentIndexExists = NULL
+        SET @CurrentIsLOB = NULL
+        SET @CurrentAllowPageLocks = NULL
+        SET @CurrentOnReadOnlyFileGroup = NULL
+        SET @CurrentFragmentationLevel = NULL
+        SET @CurrentPageCount = NULL
+        SET @CurrentAction = NULL
+        SET @CurrentComment = NULL
+
+        DELETE FROM @tmpIndexExists
+        DELETE FROM @tmpIsLOB
+        DELETE FROM @tmpAllowPageLocks
+        DELETE FROM @tmpOnReadOnlyFileGroup
+
+      END
+
+    END
+
+    -- Update that the database is completed
+    UPDATE @tmpDatabases
+    SET Completed = 1
+    WHERE ID = @CurrentID
+
+    -- Clear variables
+    SET @CurrentID = NULL
+    SET @CurrentDatabase = NULL
+    SET @CurrentIsDatabaseAccessible = NULL
+    SET @CurrentMirroringRole = NULL
+
+    SET @CurrentCommandSelect01 = NULL
+
+    DELETE FROM @tmpIndexes
+
+  END
+
+  ----------------------------------------------------------------------------------------------------
+  --// Log completing information                                                                 //--
+  ----------------------------------------------------------------------------------------------------
+
+  Logging:
+  SET @EndMessage = 'DateTime: ' + CONVERT(nvarchar,GETDATE(),120)
+  SET @EndMessage = REPLACE(@EndMessage,'%','%%')
+  RAISERROR(@EndMessage,10,1) WITH NOWAIT
+
+  ----------------------------------------------------------------------------------------------------
+
+END
+
+
+
+
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  StoredProcedure [dbo].[Perptech_usp_IntegrityCheck]    Script Date: 02/25/2013 11:48:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+-- =============================================
+-- Author:		<Author,,Name>
+-- Create date: <Create Date,,>
+-- Description:	<Description,,>
+-- =============================================
+CREATE PROCEDURE [dbo].[Perptech_usp_IntegrityCheck]
+
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+		Declare @DBName nvarchar(300)
+		Declare @Str nvarchar(300)
+
+		Declare DB_Cursor Cursor for
+		Select name from sys.databases where name <> 'TempDB'
+
+		Open DB_Cursor
+
+		Fetch Next from DB_Cursor into @DBName
+
+		While @@FETCH_STATUS = 0
+			Begin
+				Set @Str = 'DBCC CheckDB(' + CHAR(39) + @DBName + CHAR(39) + ')'
+				Print @Str
+				
+				Begin Try
+				
+					Execute sp_executesql @str
+				
+				End Try
+				
+				Begin Catch
+					Print 'Error with ' + @DBName
+				End Catch
+				
+				Fetch Next from DB_Cursor into @DBname
+			End
+			
+		Close DB_Cursor
+		Deallocate DB_Cursor
+END
+
+
+
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  StoredProcedure [dbo].[Perptech_usp_UpdateStats]    Script Date: 02/25/2013 11:49:01 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+CREATE PROCEDURE [dbo].[Perptech_usp_UpdateStats]
+    (
+      @Databases NVARCHAR(MAX),
+      @StatisticsUpdateOlderThanDays INT = 7, --update statistics that haven't been updated since X days ago
+      @StatisticsSampleType NVARCHAR(7) = 'PERCENT',
+      @StatisticsSampleSize INT = NULL, -- NULL, 0 and 100 assume FULLSCAN.
+      @ColumnOnly NVARCHAR(1) = 'N', -- not currently in use, will be used in future version
+      @TimeLimit INT = NULL,
+      @Execute NVARCHAR(MAX) = 'Y'
+
+    )
+AS 
+    BEGIN
+  /*--------------------------------------------------------------------------------------------------
+  --// Set options                                                                                //--
+  --------------------------------------------------------------------------------------------------*/
+--exec UpdateStats @Databases = '<dbname>'
+        SET NOCOUNT ON
+
+        SET LOCK_TIMEOUT 3600000
+
+  /*--------------------------------------------------------------------------------------------------
+  --// Declare variables                                                                          //--
+  --------------------------------------------------------------------------------------------------*/
+        DECLARE @StartMessage NVARCHAR(MAX)
+        DECLARE @EndMessage NVARCHAR(MAX)
+        DECLARE @DatabaseMessage NVARCHAR(MAX)
+        DECLARE @ErrorMessage NVARCHAR(MAX)
+
+        DECLARE @StartTime DATETIME
+
+        DECLARE @CurrentID INT
+        DECLARE @CurrentDatabase NVARCHAR(MAX)
+        DECLARE @CurrentIsDatabaseAccessible BIT
+        DECLARE @CurrentMirroringRole NVARCHAR(MAX)
+        
+        DECLARE @CurrentCommandSelect01 NVARCHAR(MAX)
+        
+        DECLARE @CurrentCommand01 NVARCHAR(MAX)
+        
+        DECLARE @CurrentCommandOutput01 INT
+        
+        DECLARE @CurrentComment NVARCHAR(MAX)
+
+        DECLARE @CurrentDBName SYSNAME
+        DECLARE @CurrentSchemaName SYSNAME
+        DECLARE @CurrentTableName SYSNAME
+        DECLARE @CurrentStatName SYSNAME
+
+        DECLARE @SamplingDesc NVARCHAR(MAX)
+            
+        DECLARE @tmpDatabases TABLE
+            (
+              ID INT IDENTITY
+                     PRIMARY KEY,
+              DatabaseName NVARCHAR(MAX),
+              Completed BIT
+            )
+
+        IF OBJECT_ID('tempdb..#Stats') IS NOT NULL 
+            DROP TABLE #Stats
+
+   
+        CREATE TABLE #Stats
+            (
+              StatsID INT IDENTITY,
+              DBName SYSNAME,
+              SchemaName SYSNAME,
+              TableName SYSNAME,
+              TableID INT,
+              StatName SYSNAME,
+              StatID INT,
+              LastUpdated DATETIME
+            )
+   
+        DECLARE @Error INT
+        SELECT  @Error = 0
+
+  /*--------------------------------------------------------------------------------------------------
+  --// Log initial information                                                                    //--
+  --------------------------------------------------------------------------------------------------*/
+
+        SET @StartTime = CONVERT(DATETIME, CONVERT(NVARCHAR, GETDATE(), 120), 120)
+
+        SET @StartMessage = 'DateTime: ' + CONVERT(NVARCHAR, @StartTime, 120) + CHAR(13) + CHAR(10)
+        SET @StartMessage = @StartMessage + 'Server: ' + CAST(SERVERPROPERTY('ServerName') AS NVARCHAR) + CHAR(13) + CHAR(10)
+        SET @StartMessage = @StartMessage + 'Version: ' + CAST(SERVERPROPERTY('ProductVersion') AS NVARCHAR) + CHAR(13) + CHAR(10)
+        SET @StartMessage = @StartMessage + 'Edition: ' + CAST(SERVERPROPERTY('Edition') AS NVARCHAR) + CHAR(13) + CHAR(10)
+        SET @StartMessage = @StartMessage + 'Procedure: ' + QUOTENAME(DB_NAME(DB_ID())) + '.' + ( SELECT    QUOTENAME(sys.schemas.name)
+                                                                                                  FROM      sys.schemas
+                                                                                                            INNER JOIN sys.objects ON sys.schemas.[schema_id] = sys.objects.[schema_id]
+                                                                                                  WHERE     [object_id] = @@PROCID
+                                                                                                ) + '.' + QUOTENAME(OBJECT_NAME(@@PROCID)) + CHAR(13) + CHAR(10)
+        SET @StartMessage = @StartMessage + 'Parameters: @Databases = ' + ISNULL('''' + REPLACE(@Databases, '''', '''''') + '''', 'NULL')
+        SET @StartMessage = @StartMessage + ', @StatisticsUpdateOlderThanDays = ' + ISNULL(CAST(@StatisticsUpdateOlderThanDays AS NVARCHAR), 'NULL')
+        SET @StartMessage = @StartMessage + ', @StatisticsSampleSize = ' + ISNULL(CAST(@StatisticsSampleSize AS NVARCHAR), 'NULL')
+        SET @StartMessage = @StartMessage + ', @StatisticsSampleType = ' + ISNULL(CAST(@StatisticsSampleType AS NVARCHAR), 'NULL')
+        SET @StartMessage = @StartMessage + ', @TimeLimit = ' + ISNULL(CAST(@TimeLimit AS NVARCHAR), 'NULL')
+        SET @StartMessage = @StartMessage + ', @Execute = ' + ISNULL('''' + REPLACE(@Execute, '''', '''''') + '''', 'NULL')
+        SET @StartMessage = @StartMessage + CHAR(13) + CHAR(10)
+        SET @StartMessage = REPLACE(@StartMessage, '%', '%%')
+        RAISERROR ( @StartMessage, 10, 1 ) WITH NOWAIT
+
+  /*--------------------------------------------------------------------------------------------------
+  --// Select databases                                                                           //--
+  --------------------------------------------------------------------------------------------------*/
+
+        IF @Databases IS NULL
+            OR @Databases = '' 
+            BEGIN
+                SET @ErrorMessage = 'The value for parameter @Databases is not supported.' + CHAR(13) + CHAR(10)
+                RAISERROR ( @ErrorMessage, 16, 1 ) WITH NOWAIT
+                SET @Error = @@ERROR
+            END
+
+        INSERT  INTO @tmpDatabases
+                (
+                  DatabaseName,
+                  Completed
+                )
+                SELECT  DatabaseName AS DatabaseName,
+                        0 AS Completed
+                FROM    dbo.DatabaseSelect(@Databases)
+                ORDER BY DatabaseName ASC
+
+        IF @@ERROR <> 0
+            OR ( @@ROWCOUNT = 0
+                 AND @Databases <> 'USER_DATABASES'
+               ) 
+            BEGIN
+                SET @ErrorMessage = 'Error selecting databases.' + CHAR(13) + CHAR(10)
+                RAISERROR ( @ErrorMessage, 16, 1 ) WITH NOWAIT
+                SET @Error = @@ERROR
+            END
+
+
+  /*--------------------------------------------------------------------------------------------------
+  --// Check input parameters                                                                     //--
+  --------------------------------------------------------------------------------------------------*/
+        IF @StatisticsSampleType NOT IN ( 'PERCENT', 'ROWS' ) 
+            BEGIN
+                SET @ErrorMessage = 'The value for parameter @StatisticsSampleType is not supported.' + CHAR(13) + CHAR(10)
+                RAISERROR ( @ErrorMessage, 16, 1 ) WITH NOWAIT
+                SET @Error = @@ERROR
+            END
+        
+        IF @StatisticsSampleType = 'PERCENT'
+            AND ( ISNULL(@StatisticsSampleSize, 0) < 0
+                  OR ISNULL(@StatisticsSampleSize, 100) > 100
+                ) 
+            BEGIN
+                SET @ErrorMessage = 'The value for parameter @StatisticsSample is not supported.' + CHAR(13) + CHAR(10)
+                RAISERROR ( @ErrorMessage, 16, 1 ) WITH NOWAIT
+                SET @Error = @@ERROR
+            END
+        
+        IF ISNULL(@StatisticsSampleSize, 0) < 0 
+            BEGIN
+                SET @ErrorMessage = 'The value for parameter @StatisticsSample is not supported.' + CHAR(13) + CHAR(10)
+                RAISERROR ( @ErrorMessage, 16, 1 ) WITH NOWAIT
+                SET @Error = @@ERROR
+            END
+                
+        IF ISNULL(@StatisticsUpdateOlderThanDays, 0) < 0 
+            BEGIN
+                SET @ErrorMessage = 'The value for parameter @StatisticsUpdateOlderThanDays is not supported.' + CHAR(13) + CHAR(10)
+                RAISERROR ( @ErrorMessage, 16, 1 ) WITH NOWAIT
+                SET @Error = @@ERROR
+            END        
+                
+        IF @ColumnOnly NOT IN ( 'Y', 'N' )
+            OR @ColumnOnly IS NULL 
+            BEGIN
+                SET @ErrorMessage = 'The value for parameter @ColumnOnly is not supported.' + CHAR(13) + CHAR(10)
+                RAISERROR ( @ErrorMessage, 16, 1 ) WITH NOWAIT
+                SET @Error = @@ERROR
+            END
+
+        IF @TimeLimit < 0 
+            BEGIN
+                SET @ErrorMessage = 'The value for parameter @TimeLimit is not supported.' + CHAR(13) + CHAR(10)
+                RAISERROR ( @ErrorMessage, 16, 1 ) WITH NOWAIT
+                SET @Error = @@ERROR
+            END
+
+        IF @Execute NOT IN ( 'Y', 'N' )
+            OR @Execute IS NULL 
+            BEGIN
+                SET @ErrorMessage = 'The value for parameter @Execute is not supported.' + CHAR(13) + CHAR(10)
+                RAISERROR ( @ErrorMessage, 16, 1 ) WITH NOWAIT
+                SET @Error = @@ERROR
+            END
+
+  /*--------------------------------------------------------------------------------------------------
+  --// Check error variable                                                                       //--
+  --------------------------------------------------------------------------------------------------*/
+
+        IF @Error <> 0 
+            GOTO Logging
+
+  /*--------------------------------------------------------------------------------------------------
+  --// Execute commands                                                                           //--
+  --------------------------------------------------------------------------------------------------*/
+        WHILE EXISTS ( SELECT   *
+                       FROM     @tmpDatabases
+                       WHERE    Completed = 0 )
+            BEGIN
+
+                SELECT TOP 1
+                        @CurrentID = ID,
+                        @CurrentDatabase = DatabaseName
+                FROM    @tmpDatabases
+                WHERE   Completed = 0
+                ORDER BY ID ASC
+
+                IF EXISTS ( SELECT  *
+                            FROM    sys.database_recovery_status
+                            WHERE   database_id = DB_ID(@CurrentDatabase)
+                                    AND database_guid IS NOT NULL ) 
+                    BEGIN
+                        SET @CurrentIsDatabaseAccessible = 1
+                    END
+                ELSE 
+                    BEGIN
+                        SET @CurrentIsDatabaseAccessible = 0
+                    END
+
+                SELECT  @CurrentMirroringRole = mirroring_role_desc
+                FROM    sys.database_mirroring
+                WHERE   database_id = DB_ID(@CurrentDatabase)
+
+    -- Set database message
+                SET @DatabaseMessage = 'DateTime: ' + CONVERT(NVARCHAR, GETDATE(), 120) + CHAR(13) + CHAR(10)
+                SET @DatabaseMessage = @DatabaseMessage + 'Database: ' + QUOTENAME(@CurrentDatabase) + CHAR(13) + CHAR(10)
+                SET @DatabaseMessage = @DatabaseMessage + 'Status: ' + CAST(DATABASEPROPERTYEX(@CurrentDatabase, 'Status') AS NVARCHAR) + CHAR(13) + CHAR(10)
+                SET @DatabaseMessage = @DatabaseMessage + 'Mirroring role: ' + ISNULL(@CurrentMirroringRole, 'None') + CHAR(13) + CHAR(10)
+                SET @DatabaseMessage = @DatabaseMessage + 'Standby: ' + CASE WHEN DATABASEPROPERTYEX(@CurrentDatabase, 'IsInStandBy') = 1 THEN 'Yes'
+                                                                             ELSE 'No'
+                                                                        END + CHAR(13) + CHAR(10)
+                SET @DatabaseMessage = @DatabaseMessage + 'Updateability: ' + CAST(DATABASEPROPERTYEX(@CurrentDatabase, 'Updateability') AS NVARCHAR) + CHAR(13) + CHAR(10)
+                SET @DatabaseMessage = @DatabaseMessage + 'User access: ' + CAST(DATABASEPROPERTYEX(@CurrentDatabase, 'UserAccess') AS NVARCHAR) + CHAR(13) + CHAR(10)
+                SET @DatabaseMessage = @DatabaseMessage + 'Is accessible: ' + CASE WHEN @CurrentIsDatabaseAccessible = 1 THEN 'Yes'
+                                                                                   ELSE 'No'
+                                                                              END + CHAR(13) + CHAR(10)
+                SET @DatabaseMessage = @DatabaseMessage + 'Recovery model: ' + CAST(DATABASEPROPERTYEX(@CurrentDatabase, 'Recovery') AS NVARCHAR) + CHAR(13) + CHAR(10)
+                SET @DatabaseMessage = REPLACE(@DatabaseMessage, '%', '%%')
+                RAISERROR ( @DatabaseMessage, 10, 1 ) WITH NOWAIT
+
+                IF DATABASEPROPERTYEX(@CurrentDatabase, 'Status') = 'ONLINE'
+                    AND NOT ( DATABASEPROPERTYEX(@CurrentDatabase, 'UserAccess') = 'SINGLE_USER'
+                              AND @CurrentIsDatabaseAccessible = 0
+                            )
+                    AND DATABASEPROPERTYEX(@CurrentDatabase, 'Updateability') = 'READ_WRITE' 
+                    BEGIN
+
+                        SELECT  @CurrentCommandSelect01 = 'use [' + @CurrentDatabase + ']; 
+                        select  db_name() AS DBName,
+                                                sch.name AS SchemaName,
+                                                t.NAME AS TableName,
+                                                t.OBJECT_ID AS TableID,
+                                                s.NAME AS StatName,
+                                                s.OBJECT_ID AS StatID,
+                                                STATS_DATE(s.OBJECT_ID, s.stats_id) AS LastUpdated
+                                    FROM    sys.stats s
+                                                JOIN sys.all_objects t ON s.object_id = t.object_id
+                                                JOIN sys.schemas sch ON t.schema_id = sch.schema_id
+                                    WHERE   type IN ( ''U'', ''V'' )'
+
+
+
+                        INSERT  INTO #Stats
+                                (
+                                  DBName,
+                                  SchemaName,
+                                  TableName,
+                                  TableId,
+                                  StatName,
+                                  StatID,
+                                  LastUpdated
+                                )
+                                EXECUTE ( @CurrentCommandSelect01
+                                       )
+                    END
+                UPDATE  @tmpDatabases
+                SET     Completed = 1
+                WHERE   ID = @CurrentID
+
+    -- Clear variables
+                SELECT  @CurrentID = NULL,
+                        @CurrentDatabase = NULL,
+                        @CurrentIsDatabaseAccessible = NULL,
+                        @CurrentMirroringRole = NULL
+            END
+
+
+/*eliminate stats that have zero rows*/
+        DELETE  FROM #Stats
+        WHERE   LastUpdated IS NULL
+/*eliminate stats that have been updated more recent that requested*/        
+        DELETE  FROM #Stats
+        WHERE   LastUpdated > DATEADD(dd, @StatisticsUpdateOlderThanDays * -1, GETDATE())
+
+        DECLARE csrStats CURSOR FAST_FORWARD LOCAL
+            FOR SELECT  DBName,
+                        SchemaName,
+                        TableName,
+                        StatName
+                FROM    #stats
+
+        OPEN csrStats
+
+        FETCH NEXT FROM csrStats INTO @CurrentDBName, @CurrentSchemaName, @CurrentTableName, @CurrentStatName
+
+        IF @StatisticsSampleSize IS NULL
+            OR @StatisticsSampleSize IN ( 1, 100 ) 
+            SELECT  @SamplingDesc = 'WITH FULLSCAN'
+        ELSE 
+            SELECT  @SamplingDesc = 'WITH SAMPLE ' + CAST(@StatisticsSampleSize AS NVARCHAR(MAX)) + ' ' + @StatisticsSampleType
+
+        WHILE @@FETCH_STATUS = 0
+            BEGIN
+                IF GETDATE() >= DATEADD(ss, @TimeLimit, @StartTime) 
+                    BEGIN
+                        SET @Execute = 'N'
+                    END
+
+                SELECT  @CurrentCommand01 = 'UPDATE STATISTICS [' + @CurrentDBName + '].[' + @CurrentSchemaName + '].[' + @CurrentTableName + '] [' + @CurrentStatName + '] ' + @SamplingDesc
+
+                EXECUTE @CurrentCommandOutput01 = [dbo].[PerpTech_usp_CommandExecute] @CurrentCommand01, '', 2, @Execute
+                SET @Error = @@ERROR
+                IF @Error <> 0 
+                    SET @CurrentCommandOutput01 = @Error
+            
+
+                FETCH NEXT FROM csrStats INTO @CurrentDBName, @CurrentSchemaName, @CurrentTableName, @CurrentStatName
+            END
+
+        CLOSE csrStats
+        DEALLOCATE csrStats
+
+  /*--------------------------------------------------------------------------------------------------
+  --// Log completing information                                                                 //--
+  --------------------------------------------------------------------------------------------------*/
+
+        Logging:
+        SET @EndMessage = 'DateTime: ' + CONVERT(NVARCHAR, GETDATE(), 120)
+        SET @EndMessage = REPLACE(@EndMessage, '%', '%%')
+        RAISERROR ( @EndMessage, 10, 1 ) WITH NOWAIT
+
+    END
+
+
+
+
+
+
+
+USE [PTI_DBA]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_DatabaseBackups]    Script Date: 02/25/2013 11:49:10 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE Procedure [dbo].[usp_DatabaseBackups]
+ @BackupType smallint			--Determine whether it be a 1 - Full Backup or 2 - Transaction Log Backup
+AS
+Begin
+	Declare @BackupPath varchar(512)		--Stores the Base Path for the All Backups Files
+	Declare @BackupFullPath varchar(1028)	--Stores the derived full path and file name o the Backup being performed
+	Declare @DBName varchar(256)			--Stored the DB Name currently being backed up
+	Declare @str nvarchar(4000)				--Stored the derived T-SQL statement being executed.
+	--Declare @BackupType int
+
+	--Set @BackupType = 1
+
+	--Set the Base Path of the Backup location
+	Set @BackupPath = '\\IOPOFilesrv\SQLBackups\IOPO-Life\'
+
+	--Determine what type of Backup being performed.
+	--If @BackupType = 1, then a FULL backup will be performed
+	If @BackupType = 1
+		Begin
+			--Open up a cursor with the databases to perform a FULL backup against.  
+			--A cursor was chosen to allow for flexibility in how the population of databases is selected, whether it be as an inclusion or exclusion WHERE clause
+			--The State determines if the database is Online, Offline, Restoring, Synchronizing.  Only Databases in Online can be backed up.
+			Declare DBName_Cursor Cursor for
+			Select name from sys.databases where name <> 'tempdb' and State = 0
+
+			--Open the Cursor
+			Open DBName_Cursor
+
+			--Populate the @DBname variable with the first value within the cursor
+			Fetch Next From DBName_Cursor into @DBName
+
+			--Loop through all values within the cursor
+			While @@Fetch_Status = 0
+				Begin
+					--Derive the Full Path and File Name of the backup file to include the date and time it was taken.
+					Set @BackupFullPath = @BackupPath + @DBName + '_backup_' + Convert(char(8), GetDate(), 112) + Replace(Convert(Char(6), GetDate(), 108), ':', '') + '.bak'
+
+					--Derive the T-SQL statement to be executed to perform the backup
+					Set @str = 'BACKUP DATABASE [' + @DBName + '] TO  DISK = ' + Char(39) + @BackupFullPath + Char(39) + 
+						' WITH NOFORMAT, NOINIT,  NAME = ' + Char(39) + @DBName + '-Full Database Backup' + Char(39) + 
+						', SKIP, NOREWIND, NOUNLOAD,  STATS = 10'
+
+					Print @str
+
+					--Execute the T-SQL Statement Derived.
+					Exec sp_executesql @str
+					
+					--Populate the @DBName variable with the next value in the list	
+					Fetch Next From DBName_Cursor into @DBName
+				End
+
+			--Close the Cursor
+			Close DBName_Cursor
+			
+			--Destroy the Cursor
+			Deallocate DBName_Cursor
+		End
+	--If @BackupType = 2, then a TRANSACTION LOG backup will be performed
+	Else if @BackupType = 2
+		Begin
+			--Open up a cursor with the databases to perform a TRANSACTION LOG backup against.  
+			--A cursor was chosen to allow for flexibility in how the population of databases is selected, whether it be as an inclusion or exclusion WHERE clause
+			--The State determines if the database is Online, Offline, Restoring, Synchronizing.  Only Databases in Online can be backed up.
+			--The Recovery_Model will determine if the database is in (1)FULL, (2)BULKLOG or (3)SIMPLE recovery, only FULL or BULKLOG can have a T-Log backup taken.
+			Declare DBName_Cursor Cursor for
+			Select name from sys.databases where name <> 'tempdb' and State = 0 and Recovery_Model in (1, 2)
+
+			--Open the Cursor
+			Open DBName_Cursor
+
+			--Populate the @DBname variable with the first value within the cursor
+			Fetch Next From DBName_Cursor into @DBName
+
+			--Loop through all values within the cursor
+			While @@Fetch_Status = 0
+				Begin
+					--Derive the Full Path and File Name of the backup file to include the date and time it was taken.
+					Set @BackupFullPath = @BackupPath + 'T-Logs\' + @DBName + '_backup_' + Convert(char(8), GetDate(), 112) + Replace(Convert(Char(6), GetDate(), 108), ':', '') + '.trn'
+
+					--Derive the T-SQL statement to be executed to perform the backup
+					Set @str = 'BACKUP LOG [' + @DBName + '] TO  DISK = ' + Char(39) + @BackupFullPath + Char(39) + 
+						' WITH NOFORMAT, NOINIT,  NAME = ' + Char(39) + @DBName + '-Transaction Log  Backup' + Char(39) + 
+						', SKIP, NOREWIND, NOUNLOAD,  STATS = 10'
+
+					Print @str
+
+					--Execute the T-SQL Statement Derived.
+					Exec sp_executesql @str
+
+					--Populate the @DBName variable with the next value in the list	
+					Fetch Next From DBName_Cursor into @DBName
+				End
+
+			--Close the Cursor
+			Close DBName_Cursor
+
+			--Destroy the Cursor
+			Deallocate DBName_Cursor
+
+		End
+
+End
+
+
+
+
+
+
+USE [msdb]
+GO
+/****** Object:  Operator [PTI_DBA]    Script Date: 02/25/2013 11:49:50 ******/
+EXEC msdb.dbo.sp_add_operator @name=N'PTI_DBA', 
+		@enabled=1, 
+		@weekday_pager_start_time=0, 
+		@weekday_pager_end_time=235959, 
+		@saturday_pager_start_time=0, 
+		@saturday_pager_end_time=235959, 
+		@sunday_pager_start_time=0, 
+		@sunday_pager_end_time=235959, 
+		@pager_days=127, 
+		@email_address=N'IOPO-MSSQL-Support@pti.net;itsupport@iopo.org', 
+		@category_name=N'[Uncategorized]'
+
+
+USE [msdb]
+GO
+/****** Object:  Operator [PTI_DBA_Emergency]    Script Date: 02/25/2013 11:49:59 ******/
+EXEC msdb.dbo.sp_add_operator @name=N'PTI_DBA_Emergency', 
+		@enabled=1, 
+		@weekday_pager_start_time=0, 
+		@weekday_pager_end_time=235959, 
+		@saturday_pager_start_time=0, 
+		@saturday_pager_end_time=235959, 
+		@sunday_pager_start_time=0, 
+		@sunday_pager_end_time=235959, 
+		@pager_days=127, 
+		@email_address=N'IOPO-MSSQL-Support@pti.net;IOPO-MSSQL-emer@pti.net', 
+		@category_name=N'[Uncategorized]'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [016 - Misc User Error]    Script Date: 02/25/2013 11:50:16 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'016 - Misc User Error', 
+		@message_id=0, 
+		@severity=16, 
+		@enabled=1, 
+		@delay_between_responses=300, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [017 - Insufficient Resources]    Script Date: 02/25/2013 11:50:24 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'017 - Insufficient Resources', 
+		@message_id=0, 
+		@severity=17, 
+		@enabled=1, 
+		@delay_between_responses=300, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [019 - Fatal Error in Resource]    Script Date: 02/25/2013 11:50:32 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'019 - Fatal Error in Resource', 
+		@message_id=0, 
+		@severity=19, 
+		@enabled=1, 
+		@delay_between_responses=300, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [020 - Fatal Error in Current Process]    Script Date: 02/25/2013 11:50:40 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'020 - Fatal Error in Current Process', 
+		@message_id=0, 
+		@severity=20, 
+		@enabled=1, 
+		@delay_between_responses=300, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [021 - Fatal Error in Database Processes]    Script Date: 02/25/2013 11:50:58 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'021 - Fatal Error in Database Processes', 
+		@message_id=0, 
+		@severity=21, 
+		@enabled=1, 
+		@delay_between_responses=300, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [022 - Fatal Error: Table Integrity Suspect]    Script Date: 02/25/2013 11:51:05 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'022 - Fatal Error: Table Integrity Suspect', 
+		@message_id=0, 
+		@severity=22, 
+		@enabled=1, 
+		@delay_between_responses=300, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [023 - Fatal Error: Database Integrity Suspect]    Script Date: 02/25/2013 11:51:13 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'023 - Fatal Error: Database Integrity Suspect', 
+		@message_id=0, 
+		@severity=23, 
+		@enabled=1, 
+		@delay_between_responses=300, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [024 - Fatal Error: Hardware Error]    Script Date: 02/25/2013 11:51:19 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'024 - Fatal Error: Hardware Error', 
+		@message_id=0, 
+		@severity=24, 
+		@enabled=1, 
+		@delay_between_responses=300, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [025 - Fatal Error]    Script Date: 02/25/2013 11:51:25 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'025 - Fatal Error', 
+		@message_id=0, 
+		@severity=25, 
+		@enabled=1, 
+		@delay_between_responses=300, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [DeadLock Alert]    Script Date: 02/25/2013 11:51:40 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'DeadLock Alert', 
+		@message_id=0, 
+		@severity=0, 
+		@enabled=1, 
+		@delay_between_responses=60, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@performance_condition=N'SQLServer:Locks|Number of Deadlocks/sec|_Total|>|0.00', 
+		@job_id=N'4f693f5f-6976-46f1-84f3-bd1c6474d0df'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [Error 15457 (Config Change)]    Script Date: 02/25/2013 11:51:46 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'Error 15457 (Config Change)', 
+		@message_id=15457, 
+		@severity=0, 
+		@enabled=1, 
+		@delay_between_responses=0, 
+		@include_event_description_in=0, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'3f9928bc-7987-446b-8636-03ec9d266d08'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [Error 825 -- Potential Drive Failure]    Script Date: 02/25/2013 11:51:54 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'Error 825 -- Potential Drive Failure', 
+		@message_id=825, 
+		@severity=0, 
+		@enabled=1, 
+		@delay_between_responses=15, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [IO error]    Script Date: 02/25/2013 11:52:21 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'IO error', 
+		@message_id=833, 
+		@severity=0, 
+		@enabled=1, 
+		@delay_between_responses=300, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [Lock Wait > 10 seconds]    Script Date: 02/25/2013 11:52:28 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'Lock Wait > 10 seconds', 
+		@message_id=0, 
+		@severity=0, 
+		@enabled=1, 
+		@delay_between_responses=60, 
+		@include_event_description_in=3, 
+		@category_name=N'[Uncategorized]', 
+		@performance_condition=N'SQLServer:Locks|Lock Wait Time (ms)|_Total|>|10000', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Alert [Login Failure]    Script Date: 02/25/2013 11:52:34 ******/
+EXEC msdb.dbo.sp_add_alert @name=N'Login Failure', 
+		@message_id=18456, 
+		@severity=0, 
+		@enabled=1, 
+		@delay_between_responses=5, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PIT_Reindex]    Script Date: 02/25/2013 11:53:12 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [Database Maintenance]    Script Date: 02/25/2013 11:53:12 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'Database Maintenance' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'Database Maintenance'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PIT_Reindex', 
+		@enabled=1, 
+		@notify_level_eventlog=0, 
+		@notify_level_email=2, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'Database Maintenance', 
+		@owner_login_name=N'sa', 
+		@notify_email_operator_name=N'PTI_DBA', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [Run script]    Script Date: 02/25/2013 11:53:13 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Run script', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=0, 
+		@os_run_priority=0, @subsystem=N'CmdExec', 
+		@command=N'sqlcmd -S IOPO-LIFE -E -Q "EXEC PTI_DBA.dbo.PerpTech_usp_IndexOptimize @Databases = ''USER_DATABASES'', @FragmentationHigh_LOB = ''INDEX_REBUILD_OFFLINE'', @FragmentationHigh_NonLOB = ''INDEX_REBUILD_OFFLINE'', @FragmentationMedium_LOB = ''INDEX_REORGANIZE_STATISTICS_UPDATE'', @FragmentationMedium_NonLOB = ''INDEX_REORGANIZE_STATISTICS_UPDATE'', @FragmentationLow_LOB = ''NOTHING'', @FragmentationLow_NonLOB = ''NOTHING'', @FragmentationLevel1 = 5, @FragmentationLevel2 = 30, @PageCountLevel = 1000, @FillFactor = 90, @StatisticsSample = 100, @TimeLimit = 3600, @Execute = ''Y''" -o E:\SQLJobLogs\RunReindex_IOPO-Life.txt
+', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Daily', 
+		@enabled=1, 
+		@freq_type=4, 
+		@freq_interval=1, 
+		@freq_subday_type=1, 
+		@freq_subday_interval=0, 
+		@freq_relative_interval=0, 
+		@freq_recurrence_factor=0, 
+		@active_start_date=20100805, 
+		@active_end_date=99991231, 
+		@active_start_time=0, 
+		@active_end_time=235959
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PTI_Backup Databases - FULL]    Script Date: 02/25/2013 11:53:28 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 02/25/2013 11:53:28 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PTI_Backup Databases - FULL', 
+		@enabled=1, 
+		@notify_level_eventlog=0, 
+		@notify_level_email=2, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'[Uncategorized (Local)]', 
+		@owner_login_name=N'sa', 
+		@notify_email_operator_name=N'PTI_DBA', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [Run Scripts]    Script Date: 02/25/2013 11:53:29 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Run Scripts', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=0, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'Exec PTI_DBA.dbo.usp_DatabaseBackups 1', 
+		@database_name=N'master', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Daily 10 PM', 
+		@enabled=1, 
+		@freq_type=4, 
+		@freq_interval=1, 
+		@freq_subday_type=1, 
+		@freq_subday_interval=0, 
+		@freq_relative_interval=0, 
+		@freq_recurrence_factor=0, 
+		@active_start_date=20130205, 
+		@active_end_date=99991231, 
+		@active_start_time=220000, 
+		@active_end_time=235959
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PTI_Backup Databases - LOGS]    Script Date: 02/25/2013 11:53:41 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 02/25/2013 11:53:41 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PTI_Backup Databases - LOGS', 
+		@enabled=1, 
+		@notify_level_eventlog=0, 
+		@notify_level_email=2, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'[Uncategorized (Local)]', 
+		@owner_login_name=N'sa', 
+		@notify_email_operator_name=N'PTI_DBA', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [Run Script]    Script Date: 02/25/2013 11:53:41 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Run Script', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=0, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'Exec PTI_DBA.dbo.usp_DatabaseBackups 2', 
+		@database_name=N'master', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Every 15 minutes', 
+		@enabled=1, 
+		@freq_type=4, 
+		@freq_interval=1, 
+		@freq_subday_type=4, 
+		@freq_subday_interval=15, 
+		@freq_relative_interval=0, 
+		@freq_recurrence_factor=0, 
+		@active_start_date=20130205, 
+		@active_end_date=99991231, 
+		@active_start_time=221500, 
+		@active_end_time=215959
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PTI_Backup History Cleanup]    Script Date: 02/25/2013 11:53:50 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [Database Maintenance]    Script Date: 02/25/2013 11:53:50 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'Database Maintenance' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'Database Maintenance'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PTI_Backup History Cleanup', 
+		@enabled=1, 
+		@notify_level_eventlog=0, 
+		@notify_level_email=2, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'Database Maintenance', 
+		@owner_login_name=N'sa', 
+		@notify_email_operator_name=N'PTI_DBA', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [Run script]    Script Date: 02/25/2013 11:53:50 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Run script', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=0, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'EXEC PTI_DBA.dbo.Perptech_usp_HistoryClean', 
+		@database_name=N'msdb', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Weekly', 
+		@enabled=1, 
+		@freq_type=8, 
+		@freq_interval=1, 
+		@freq_subday_type=1, 
+		@freq_subday_interval=0, 
+		@freq_relative_interval=0, 
+		@freq_recurrence_factor=1, 
+		@active_start_date=20110206, 
+		@active_end_date=99991231, 
+		@active_start_time=30000, 
+		@active_end_time=235959
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PTI_Blocking Notification Job]    Script Date: 02/25/2013 11:53:58 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 02/25/2013 11:53:58 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PTI_Blocking Notification Job', 
+		@enabled=1, 
+		@notify_level_eventlog=2, 
+		@notify_level_email=0, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'[Uncategorized (Local)]', 
+		@owner_login_name=N'sa', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [Execute Monitoring Procedure]    Script Date: 02/25/2013 11:53:58 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Execute Monitoring Procedure', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=1, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'EXEC PTI_DBA.dbo.Perptech_usp_BlockingNotification', 
+		@database_name=N'master', 
+		@flags=4
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Every 15 Minutes', 
+		@enabled=1, 
+		@freq_type=4, 
+		@freq_interval=1, 
+		@freq_subday_type=4, 
+		@freq_subday_interval=15, 
+		@freq_relative_interval=0, 
+		@freq_recurrence_factor=0, 
+		@active_start_date=20051017, 
+		@active_end_date=99991231, 
+		@active_start_time=0, 
+		@active_end_time=235959
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PTI_Cycle error log]    Script Date: 02/25/2013 11:54:05 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 02/25/2013 11:54:05 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PTI_Cycle error log', 
+		@enabled=1, 
+		@notify_level_eventlog=0, 
+		@notify_level_email=2, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'[Uncategorized (Local)]', 
+		@owner_login_name=N'sa', 
+		@notify_email_operator_name=N'PTI_DBA', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [Cycle error log]    Script Date: 02/25/2013 11:54:06 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Cycle error log', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=0, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'exec sp_cycle_errorlog ', 
+		@database_name=N'master', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Weekly @ 6:00am', 
+		@enabled=1, 
+		@freq_type=8, 
+		@freq_interval=4, 
+		@freq_subday_type=1, 
+		@freq_subday_interval=0, 
+		@freq_relative_interval=0, 
+		@freq_recurrence_factor=1, 
+		@active_start_date=20100406, 
+		@active_end_date=99991231, 
+		@active_start_time=60000, 
+		@active_end_time=235959
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PTI_DeadLock Alert Notification]    Script Date: 02/25/2013 11:54:14 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 02/25/2013 11:54:14 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PTI_DeadLock Alert Notification', 
+		@enabled=1, 
+		@notify_level_eventlog=2, 
+		@notify_level_email=2, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'[Uncategorized (Local)]', 
+		@owner_login_name=N'sa', 
+		@notify_email_operator_name=N'PTI_DBA', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [Alert on DeadLock]    Script Date: 02/25/2013 11:54:14 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Alert on DeadLock', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=1, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'Exec PTI_DBA.dbo.Perptech_usp_Deadlocklog ''$(ESCAPE_SQUOTE(A-DBN))'', ''$(ESCAPE_SQUOTE(A-SVR))'', ''$(ESCAPE_SQUOTE(STRTDT))'', ''$(ESCAPE_SQUOTE(STRTTM))'', ''$(ESCAPE_SQUOTE(A-SEV))'', ''$(ESCAPE_SQUOTE(A-ERR))'', ''$(ESCAPE_SQUOTE(A-MSG))''
+
+
+								', 
+		@database_name=N'master', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PTI_Disk Space Check]    Script Date: 02/25/2013 11:54:21 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 02/25/2013 11:54:21 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PTI_Disk Space Check', 
+		@enabled=1, 
+		@notify_level_eventlog=0, 
+		@notify_level_email=2, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'[Uncategorized (Local)]', 
+		@owner_login_name=N'sa', 
+		@notify_email_operator_name=N'PTI_DBA', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [SCRIPT]    Script Date: 02/25/2013 11:54:22 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'SCRIPT', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=0, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'exec dbo.Perptech_usp_DiskFreeSpaceAlert 5120
+
+', 
+		@database_name=N'PTI_DBA', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Recurring Hourly', 
+		@enabled=1, 
+		@freq_type=4, 
+		@freq_interval=1, 
+		@freq_subday_type=8, 
+		@freq_subday_interval=1, 
+		@freq_relative_interval=0, 
+		@freq_recurrence_factor=0, 
+		@active_start_date=20110615, 
+		@active_end_date=99991231, 
+		@active_start_time=0, 
+		@active_end_time=235959
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PTI_Integrity Check]    Script Date: 02/25/2013 11:54:33 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 02/25/2013 11:54:33 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PTI_Integrity Check', 
+		@enabled=1, 
+		@notify_level_eventlog=0, 
+		@notify_level_email=2, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'[Uncategorized (Local)]', 
+		@owner_login_name=N'sa', 
+		@notify_email_operator_name=N'PTI_DBA', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [Run integrity check]    Script Date: 02/25/2013 11:54:34 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Run integrity check', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=0, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'Exec PTI_DBA.dbo.Perptech_usp_IntegrityCheck', 
+		@database_name=N'master', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Daily @ 2:05am', 
+		@enabled=1, 
+		@freq_type=4, 
+		@freq_interval=1, 
+		@freq_subday_type=1, 
+		@freq_subday_interval=0, 
+		@freq_relative_interval=0, 
+		@freq_recurrence_factor=0, 
+		@active_start_date=20100519, 
+		@active_end_date=99991231, 
+		@active_start_time=20500, 
+		@active_end_time=235959
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PTI_Notification of Configuration Change]    Script Date: 02/25/2013 11:54:41 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 02/25/2013 11:54:41 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PTI_Notification of Configuration Change', 
+		@enabled=1, 
+		@notify_level_eventlog=2, 
+		@notify_level_email=0, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'[Uncategorized (Local)]', 
+		@owner_login_name=N'sa', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [Notification of Configuration Change]    Script Date: 02/25/2013 11:54:42 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Notification of Configuration Change', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=1, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'
+DECLARE @msg nvarchar(4000)
+DECLARE @Sub varchar(128)
+
+Declare @dbaEmail as nvarchar(3000)
+
+Select @dbaEmail = Email_Addresses from PTI_DBA.dbo.Alert_Email_Config where Email_Group = ''DBA Alerts''
+
+Set @Sub = Host_Name() + '' SQL Configuration Has Changed''
+
+Set @msg = ''
+                Error: $(ESCAPE_SQUOTE(A-ERR))
+                Severity: $(ESCAPE_SQUOTE(A-SEV))
+                Date: $(ESCAPE_SQUOTE(STRTDT))
+                Time: $(ESCAPE_SQUOTE(STRTTM))
+                Server: $(ESCAPE_SQUOTE(A-SVR))
+                Database: $(ESCAPE_SQUOTE(A-DBN))
+                Message: $(ESCAPE_SQUOTE(A-MSG))
+''
+                                                                
+EXEC msdb.dbo.sp_send_dbmail
+                  @profile_name = ''LifeLogics'',
+                  @recipients = @dbaEmail,
+                  @subject = @Sub,
+                  @body = @msg
+                                                
+TheEnd:
+', 
+		@database_name=N'master', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PTI_Restart Notification]    Script Date: 02/25/2013 11:54:47 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 02/25/2013 11:54:47 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PTI_Restart Notification', 
+		@enabled=1, 
+		@notify_level_eventlog=2, 
+		@notify_level_email=2, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'SQL Server Restart Notification', 
+		@category_name=N'[Uncategorized (Local)]', 
+		@owner_login_name=N'sa', 
+		@notify_email_operator_name=N'PTI_DBA', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [SQL Server Restart Notification]    Script Date: 02/25/2013 11:54:48 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'SQL Server Restart Notification', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=1, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'
+DECLARE @UpTimeDays int
+DECLARE @SQLServerStarted varchar(20)
+DECLARE @rc int
+DECLARE @msg varchar(1000)
+
+SET @UpTimeDays = (select DateDiff(D, CrDate, GetDate()) from master..SysDatabases where name = ''TempDb'')
+IF @UpTimeDays = 0
+BEGIN
+    SET @SQLServerStarted = (select convert(varchar(20), CrDate, 113) from master..SysDatabases where name = ''TempDb'')
+    SET @msg = ''The SQL Server <b>'' + @@SERVERNAME + ''</b> was restarted on <b>'' + @SQLServerStarted + ''</b>''
+    EXEC @rc = msdb.dbo.sp_send_dbmail
+		@profile_name = ''LifeLogics'',
+        @recipients = ''warren.sifre@pti.net'',
+        @importance = ''high'',
+        @subject = ''SQL Server Restart Notification'',
+        @body_format = ''html'',
+        @body = @msg,
+        @exclude_query_output = 1
+    IF @rc = 1 RAISERROR(''sp_send_dbmail Failed'', 16, 1)
+END
+', 
+		@database_name=N'master', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Schedule', 
+		@enabled=1, 
+		@freq_type=64, 
+		@freq_interval=0, 
+		@freq_subday_type=0, 
+		@freq_subday_interval=0, 
+		@freq_relative_interval=0, 
+		@freq_recurrence_factor=0, 
+		@active_start_date=20090402, 
+		@active_end_date=99991231, 
+		@active_start_time=0, 
+		@active_end_time=235959
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+
+
+
+USE [msdb]
+GO
+/****** Object:  Job [PTI_Stats Update]    Script Date: 02/25/2013 11:54:54 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [Database Maintenance]    Script Date: 02/25/2013 11:54:54 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'Database Maintenance' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'Database Maintenance'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'PTI_Stats Update', 
+		@enabled=1, 
+		@notify_level_eventlog=0, 
+		@notify_level_email=2, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'Database Maintenance', 
+		@owner_login_name=N'sa', 
+		@notify_email_operator_name=N'PTI_DBA', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [Run script]    Script Date: 02/25/2013 11:54:54 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Run script', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=0, 
+		@os_run_priority=0, @subsystem=N'CmdExec', 
+		@command=N'sqlcmd -S IOPO-Life -E -Q "Exec PTI_DBA.dbo.Perptech_usp_UpdateStats @Databases = ''USER_DATABASES'', @StatisticsUpdateOlderThanDays = 7, @StatisticsSampleSize = 100, @TimeLimit = 3600, @Execute = ''y''" -o "E:\SQLJobLogs\RunStats_IOPO-Life.txt"', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Daily', 
+		@enabled=1, 
+		@freq_type=4, 
+		@freq_interval=1, 
+		@freq_subday_type=1, 
+		@freq_subday_interval=0, 
+		@freq_relative_interval=0, 
+		@freq_recurrence_factor=0, 
+		@active_start_date=20100706, 
+		@active_end_date=99991231, 
+		@active_start_time=10000, 
+		@active_end_time=235959
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:

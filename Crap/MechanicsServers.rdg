@@ -1,0 +1,476 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RDCMan programVersion="2.7" schemaVersion="3">
+  <file>
+    <credentialsProfiles />
+    <properties>
+      <expanded>True</expanded>
+      <name>MechanicsServers</name>
+    </properties>
+    <logonCredentials inherit="None">
+      <profileName scope="Local">Custom</profileName>
+      <userName>mapotter</userName>
+      <password>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAATQnp6qkFVkungBYBnmFAUgAAAAACAAAAAAADZgAAwAAAABAAAADM7KkOZc4WPnRDY49Rl7eKAAAAAASAAACgAAAAEAAAAPIFkooxI3gSX7201cXb2IgYAAAA3NTGZ7gxXU7B8SjqEbkZOQzsLtmL+8hpFAAAAB7gKSN5am7pMHSIQARDY8txnfif</password>
+      <domain>CRB</domain>
+    </logonCredentials>
+    <group>
+      <properties>
+        <expanded>False</expanded>
+        <name>Cannot Access</name>
+      </properties>
+      <server>
+        <properties>
+          <name>LVCTXLIC1</name>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVPaySVR1</name>
+        </properties>
+      </server>
+    </group>
+    <group>
+      <properties>
+        <expanded>True</expanded>
+        <name>North Cal</name>
+      </properties>
+      <logonCredentials inherit="None">
+        <profileName scope="Local">Custom</profileName>
+        <userName>mpotter</userName>
+        <password>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAATQnp6qkFVkungBYBnmFAUgAAAAACAAAAAAADZgAAwAAAABAAAADNkyoAEynmRhkXfTlIeptiAAAAAASAAACgAAAAEAAAAO/7pLeAR55E0Tb74xE877kYAAAAApWbORwVfGQZvfu6YzJVTTBfKOLxdhtZFAAAAJcoQ+laDgHTpsz4TmVRwcNVufsh</password>
+        <domain>CRB</domain>
+      </logonCredentials>
+      <server>
+        <properties>
+          <displayName>Crdwizprd-app01</displayName>
+          <name>172.17.99.56</name>
+          <comment>172.17.99.56 – Card Wiz node 1 with SQL Server</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <displayName>Crdwizprd-app02</displayName>
+          <name>172.17.99.33</name>
+          <comment>172.17.99.33 – Card Wiz node 2 with SQL Server</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>dbdev-sql02.mechbank.com</name>
+          <comment>Sharepoint dev</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>dbprd-sql01.mechbank.com</name>
+          <comment>Papercut, Mechesigna, SAND, TMRViewSQL, Triton</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>dbprd-sql02.mechbank.com</name>
+          <comment>AppSense, EMCSourceOne, Heat_EMSS, Horizon, IADApps, IntraNet, Safeword, SCCM, SFBARCHIVE, SHAREPOINT</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>dbprd-sql03.mechbank.com</name>
+          <comment>Zavanta, TCRGlory, Veeam, Footprints, Raddon, ActiveAdmin,</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>dbprd-sql04.mechbank.com</name>
+          <comment>BAP, Moodys, Navigant</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>dbprd-sql05.mechbank.com</name>
+          <comment>OrionSQL</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>IADTST-SQL01.mechbank.com</name>
+          <comment>Trition test, sharepoint test, surcharge rebate, social security</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>Issprd-rds16.mechbank.com</name>
+          <comment>Treesize, Veeam, Avaya</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>PAYTST-APP01.mechbank.com</name>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <displayName>SPPRDINTSQL01</displayName>
+          <name>SPPRDINTSQL01.mechbank.com</name>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <displayName>SPPRDINTSQL02</displayName>
+          <name>SPPRDINTSQL02.mechbank.com</name>
+        </properties>
+      </server>
+    </group>
+    <group>
+      <properties>
+        <expanded>True</expanded>
+        <name>South Cal</name>
+      </properties>
+      <group>
+        <properties>
+          <expanded>False</expanded>
+          <name>Citrix</name>
+        </properties>
+      </group>
+      <group>
+        <properties>
+          <expanded>True</expanded>
+          <name>EDW</name>
+        </properties>
+        <server>
+          <properties>
+            <name>LVDataHub16</name>
+            <comment>Production – all processes come from this server and logs for all processes are on this server</comment>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVEDWDEV16</name>
+            <comment>Development Server</comment>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVEDWPROC</name>
+            <comment>Production Risk excel reports server</comment>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVEDWPROD16</name>
+            <comment>Production reporting and Call Center IVR databases</comment>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVEDWQA16</name>
+            <comment>QA DBA Testing server</comment>
+          </properties>
+        </server>
+      </group>
+      <group>
+        <properties>
+          <expanded>False</expanded>
+          <name>Jericho</name>
+        </properties>
+        <server>
+          <properties>
+            <name>LVDevJericho1</name>
+            <comment>Jericho Development – not sure if anyone uses this server</comment>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVDevJerichoSQL01</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVJerichoSQL01</name>
+            <comment>Production Jericho – Compliance team</comment>
+          </properties>
+        </server>
+      </group>
+      <group>
+        <properties>
+          <expanded>False</expanded>
+          <name>MDS</name>
+        </properties>
+        <server>
+          <properties>
+            <name>LVMDS</name>
+            <comment>Production Risk Analysis server – also some development  (old Prod MDS)</comment>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVMDS16</name>
+            <comment>Production MDS Server</comment>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVMDSQA</name>
+            <comment>QA MDS Server</comment>
+          </properties>
+        </server>
+      </group>
+      <group>
+        <properties>
+          <expanded>False</expanded>
+          <name>MoveIt</name>
+        </properties>
+        <server>
+          <properties>
+            <name>LVMoveit1</name>
+            <comment>Production app server (1)</comment>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVMoveit2</name>
+            <comment>Production failover app server (2)</comment>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVMoveItDMZ1</name>
+            <comment>Production File server for Moveit</comment>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVMOVEITSQL01</name>
+            <comment>Production for MoveIT</comment>
+          </properties>
+        </server>
+      </group>
+      <group>
+        <properties>
+          <expanded>True</expanded>
+          <name>Need To Update</name>
+        </properties>
+      </group>
+      <group>
+        <properties>
+          <expanded>False</expanded>
+          <name>Others</name>
+        </properties>
+        <server>
+          <properties>
+            <name>crbcmdvr.crb.local</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>crblvdvr1.crb.local</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>irvcrasvr.crb.local</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>lvadfs.crb.local</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVBAM</name>
+            <comment>Production for BAM – Accounting</comment>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVCTXSQL</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVDVR</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>LVHEATEMSSQL01</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>lvjericho1.crb.local</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>lvproc247.crb.local</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>lvsqlclu01.crb.local</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>lvsqlclu02.crb.local</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>lvtmfd.crb.local</name>
+          </properties>
+        </server>
+      </group>
+      <group>
+        <properties>
+          <expanded>False</expanded>
+          <name>PowerBI</name>
+        </properties>
+        <server>
+          <properties>
+            <name>powerbi-rpt01</name>
+          </properties>
+        </server>
+        <server>
+          <properties>
+            <name>pwrbiprd-rpt01</name>
+          </properties>
+        </server>
+      </group>
+    </group>
+    <group>
+      <properties>
+        <expanded>False</expanded>
+        <name>South Cal</name>
+      </properties>
+      <server>
+        <properties>
+          <name>asdev-vstudio01</name>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>Issprd-rds16.mechbank.com</name>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVAcctsql01</name>
+          <comment>Production for accounting reports</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVARCHIVE16</name>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVBIPROD</name>
+          <comment>Production MicroStrategy app server</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVCTXSQL</name>
+          <comment>Lvctxsql is for our Citrix deployment</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVDepcon</name>
+          <comment>Production Fiserv Depcon application</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVFR1</name>
+          <comment>Data files server – holds SQL backups and incoming/outgoing files to Moveit</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVFRSVR</name>
+          <comment>Data files server for Risk and Accounting shares</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>lvheatemssql01</name>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVININ02</name>
+          <comment>Production IVR (Call Center) application server</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVIVRSQL</name>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVRiskSQL16</name>
+          <comment>Risk (Auto) reporting server</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVSAGE</name>
+          <comment>Production for SAGE application – Accounting</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVSCCM01</name>
+          <comment>Production VM SQL Server</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVSCSQL01</name>
+          <comment>SQL server hosting Primary site server and wsus server databases. Also used as reporting server.</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVSCWSUS01</name>
+          <comment>Windows Update services server used by SCCM</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVSPSQL01</name>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVSQLCOMP</name>
+          <comment>DBA test application server</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVSQLVIR01</name>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVSSRSProd16</name>
+          <comment>Production SSRS server</comment>
+        </properties>
+      </server>
+      <server>
+        <properties>
+          <name>LVSSRSQA16</name>
+          <comment>QA SSRS Server</comment>
+        </properties>
+      </server>
+    </group>
+  </file>
+  <connected />
+  <favorites />
+  <recentlyUsed />
+</RDCMan>
