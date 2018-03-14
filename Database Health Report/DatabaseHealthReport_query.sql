@@ -1,6 +1,22 @@
 SET NOCOUNT ON
 
-INSERT INTO [DBA].[dbo].[DailyHealthReport_Overrides]             
+If not exists(Select name from DBA.sys.objects where name = 'Daily_Health_Report_Overrides')
+BEGIN
+	CREATE TABLE [DBA].[dbo].[Daily_Health_Report_Overrides](
+	[DatabaseName] [nvarchar](100) NOT NULL,
+	[LastFullBackupThresholdDays] [int] NOT NULL,
+	[LastTransBackup_Threshold_Hours] [int] NOT NULL,
+	[LastSuccessfulCheckDB_Threshold_Days] [int] NOT NULL,
+	[VLF_Threshold_Yellow] [int] NOT NULL,
+	[AutoClose_Ignore] [bit] NOT NULL,
+	[AutoShrink_Ignore] [bit] NOT NULL,
+	[State_Ignore] [bit] NOT NULL,
+	[Deadlock_Threshold_Count] [int] NOT NULL,
+	[Block_Threshold_Count] [int] NOT NULL,
+	[VLF_Threshold_Orange] [int] NOT NULL)
+END
+
+INSERT INTO [DBA].[dbo].[Daily_Health_Report_Overrides]             
 ([DatabaseName]
 ,[LastFullBackupThresholdDays]             
 ,[LastTransBackup_Threshold_Hours]             
@@ -14,7 +30,7 @@ INSERT INTO [DBA].[dbo].[DailyHealthReport_Overrides]
 ,[VLF_Threshold_Orange])  
 Select name, -8, -24, -8, 200, 0, 0, 0, 100, 100, 200 
 	from [master].sys.databases 
-	where name not in (select databasename from dba.dbo.DailyHealthReport_Overrides) 
+	where name not in (select databasename from dba.dbo.[Daily_Health_Report_Overrides])
 
 CREATE TABLE #DBInfo_LastKnownGoodCheckDB
     (
@@ -89,7 +105,7 @@ DECLARE csrDatabases CURSOR FAST_FORWARD LOCAL
     FOR SELECT  name,
                 state_desc
         FROM    sys.databases
-        WHERE   name NOT IN ( 'tempdb' ) and database_id < 5
+        WHERE   name NOT IN ( 'tempdb' )
 
 OPEN csrDatabases
 
@@ -123,7 +139,23 @@ WHILE @@FETCH_STATUS = 0
     --Insert the results of DBCC LOGINFO
                 SET @SQL = 'DBCC LOGINFO(' + CHAR(39) + @DatabaseName + CHAR(39) + ')'
 
-                INSERT  INTO #DBInfo_VLF
+                IF @VersionTick = 1
+					BEGIN
+						INSERT  INTO #DBInfo_VLF
+                        (
+                          FileID,
+                          FileSize,
+                          StartOffset,
+                          FSeqNo,
+                          Status,
+                          Parity,
+                          CreateLSN
+                        )
+                        EXEC ( @SQL )
+					END
+				ELSE
+					BEGIN
+						INSERT  INTO #DBInfo_VLF
                         (
                           RecoveryUnitID,
 						  FileID,
@@ -134,8 +166,8 @@ WHILE @@FETCH_STATUS = 0
                           Parity,
                           CreateLSN
                         )
-                        EXEC ( @SQL
-                            )
+                        EXEC ( @SQL )
+					END
 
                 UPDATE  #DBInfo_VLF
                 SET     DatabaseNAme = @DatabaseNAme
@@ -152,51 +184,50 @@ IF @VersionTick = 1
         WHERE   Field <> 'dbi_dbccLastKnownGood'
     END ;
  
-
-WITH    LastFullBackup
-          AS ( SELECT   bs.database_name,
-                        MAX(bs.backup_finish_date) AS BackupDate
-               FROM     msdb..backupset bs
-               WHERE    bs.TYPE = 'D'
-               GROUP BY bs.database_name
-             ) ,
-        LastTranBackup
-          AS ( SELECT   bs.database_name,
-                        MAX(bs.backup_finish_date) AS BackupDate
-               FROM     msdb..backupset bs
-               WHERE    bs.TYPE = 'L'
-               GROUP BY bs.database_name
-             ) ,
-        DataSize
-          AS ( SELECT   database_id,
-                        SUM(CAST(size AS NUMERIC(18, 4)) * 8 / 1024 / 1024) AS Gig
-               FROM     sys.master_files
-               WHERE    type IN ( 0, 4 )
-               GROUP BY database_id
-             ) ,
-        LogSize
-          AS ( SELECT   database_id,
-                        SUM(CAST(size AS NUMERIC(18, 4)) * 8 / 1024 / 1024) AS Gig
-               FROM     sys.master_files
-               WHERE    type = 1
-               GROUP BY database_id
-             ),
-        DeadLock
-          AS (Select [Database], Count(*) as [count] from DBA.dbo.Deadlock_Log
-          Where Date = @DL_Date
-		  Group By [database]
-		  ),
-		Blocking
-			AS (  
-			Select [name], COUNT(*) as [Block_Count] from dba.dbo.blocking
-      where tstamp >= DateAdd(day, -1, GETDATE()) and tstamp < GETDATE()
-  Group by [name] 
-  )
+    
+	WITH    LastFullBackup
+			  AS ( SELECT   bs.database_name,
+							MAX(bs.backup_finish_date) AS BackupDate
+				   FROM     msdb..backupset bs
+				   WHERE    bs.TYPE = 'D'
+				   GROUP BY bs.database_name
+				 ) ,
+			LastTranBackup
+			  AS ( SELECT   bs.database_name,
+							MAX(bs.backup_finish_date) AS BackupDate
+				   FROM     msdb..backupset bs
+				   WHERE    bs.TYPE = 'L'
+				   GROUP BY bs.database_name
+				 ) ,
+			DataSize
+			  AS ( SELECT   database_id,
+							SUM(CAST(size AS NUMERIC(18, 4)) * 8 / 1024 / 1024) AS Gig
+				   FROM     sys.master_files
+				   WHERE    type IN ( 0, 4 )
+				   GROUP BY database_id
+				 ) ,
+			LogSize
+			  AS ( SELECT   database_id,
+							SUM(CAST(size AS NUMERIC(18, 4)) * 8 / 1024 / 1024) AS Gig
+				   FROM     sys.master_files
+				   WHERE    type = 1
+				   GROUP BY database_id
+				 )/*,
+			DeadLock
+			  AS (Select [Database], Count(*) as [count] from DBA.dbo.Deadlock_Log
+					Where Date = @DL_Date
+					Group By [database]
+			  ),
+			Blocking
+				AS (  
+				Select [name], COUNT(*) as [Block_Count] from dba.dbo.blocking
+		  where tstamp >= DateAdd(day, -1, GETDATE()) and tstamp < GETDATE()
+			Group by [name])*/
 
 
     /*added distinct because there are two rows in the CheckDB command on 2008
              will worry this this later*/
-    SELECT  DISTINCT
+	SELECT  DISTINCT
             SERVERPROPERTY('servername') AS ServerName,
             db.name AS DBName,
             CAST(db.recovery_model_desc AS VARCHAR(255)) AS RecoveryModel,
@@ -211,8 +242,10 @@ WITH    LastFullBackup
             db.State_Desc AS DBState,
             db.is_read_only AS IsReadOnly,
             ISNULL((SELECT name FROM sys.databases inDB WHERE inDB.database_id = db.source_database_id), '') AS SnapOfDB,
-            ISNULL(Deadlock.[Count], '0') as Deadlock_Count,
-            ISNULL(Blocking.[Block_Count], '0') as Block_Count,
+            --ISNULL(Deadlock.[Count], '0') as Deadlock_Count,
+            --ISNULL(Blocking.[Block_Count], '0') as Block_Count,
+			'0' as Deadlock_Count,
+			'0' as Block_Count,
             DHRO.LastFullBackupThresholdDays,
             DHRO.LastTransBackup_Threshold_Hours,
             DHRO.LastSuccessfulCheckDB_Threshold_Days,
@@ -230,16 +263,16 @@ WITH    LastFullBackup
             LEFT JOIN LastFullBackup ON db.name = LastFullBackup.database_name
             LEFT JOIN LastTranBackup ON db.name = LastTranBackup.database_name
             LEFT JOIN #DBInfo_LastKnownGoodCheckDB LastCHKDB ON db.name = LastCHKDB.DatabaseName
-            LEFT JOIN Deadlock on Deadlock.[database] = DB_Name(db.database_id)
-            LEFT JOIN Blocking on Blocking.[name] = DB_NAME(db.database_id)
+            --LEFT JOIN Deadlock on Deadlock.[database] = DB_Name(db.database_id)
+            --LEFT JOIN Blocking on Blocking.[name] = DB_NAME(db.database_id)
             LEFT JOIN ( SELECT  DatabaseName,
                                 COUNT(FileID) AS VLFCount
                         FROM    #DBInfo_VLF
                         GROUP BY DatabaseName
                       ) VLFCount ON db.name = VLFCount.DatabaseName
-            Left Join DBA.dbo.DailyHealthReport_Overrides DHRO on DHRO.DatabaseName = db.name
-			where db.database_id < 5
+            Left Join DBA.dbo.[Daily_Health_Report_Overrides] DHRO on DHRO.DatabaseName = db.name
     ORDER BY db.name
+
     
 If not exists(Select name from DBA.sys.objects where name = 'Daily_Health_Report_Archive') 
 	Begin

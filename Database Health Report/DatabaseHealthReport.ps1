@@ -7,16 +7,19 @@
 
 param 
 (
-  [string] $ServerFile = "C:\PSScripts\AllServers.txt",
-  [string] $DBQueryPath = "C:\PSScripts\DatabaseHealthReport_query.sql",
-  [string] $JobQueryPath = "C:\PSScripts\JobHealthReport_query.sql",
-  [string] $SMTPServer = "mail.mechanicsbank.com",
+  [string] $ServerFile = "C:\PSScripts\DatabaseHealthReport\AllServers.txt",
+  [string] $DBQueryPath = "C:\PSScripts\DatabaseHealthReport\DatabaseHealthReport_query.sql",
+  [string] $JobQueryPath = "C:\PSScripts\DatabaseHealthReport\JobHealthReport_query.sql",
+  [string] $SMTPServer = "smtp.crb.local",
   [string] $Subject = "MSSQL Daily Health Report",
   [string] $From = "Mechanics-HealthCheck@mechanicsbank.com",
-  [string] $To = "matthew_potter@mechanicsbank.com",
-  [string] $DiskQueryPath = "C:\PSScripts\DiskHealthReport_query.sql"
-  
+  [string] $To = "matthew_potter@mechanicsbank.com",#"dba@mechanicsbank.com",
+  [string] $DiskQueryPath = "C:\PSScripts\DatabaseHealthReport\DiskHealthReport_query.sql",
+  [string] $serverGroupPath = "SQLSERVER:\SQLRegistration\Central Management Server Group",
+  [string] $HubbServerName = "LVDATAHUB16"
 )
+
+Import-Module SQLPS
 
 function SendEmail_w_Attachment
 {
@@ -69,6 +72,8 @@ $JobHealthCommand = [string]::join([environment]::newline, (get-content $JobQuer
 $DiskHealthCommand = [string]::join([environment]::newline, (get-content $DiskQueryPath ))
 $OSDisk = @{}
 
+#$Servers = dir $serverGroupPath -recurse | where {$_.mode -ne "d"} | select-object Name -unique
+
 foreach ($server in $Servers)
 {
 	$connString = "Data Source=$server;Initial Catalog=master;Integrated Security=SSPI;Application Name=Daily Health Report from $LocalOS"
@@ -102,6 +107,7 @@ foreach ($server in $Servers)
 		$jobseverity = 5
 	}
 	
+   
 	
 	$diskda = new-object System.Data.SqlClient.SqlDataAdapter ($DiskHealthCommand, $connString)
 	$diskda.SelectCommand.CommandTimeout = 120
@@ -149,12 +155,14 @@ foreach ($server in $Servers)
 	{
 	$jobString = $(foreach($row in $jobdt)`
 	{ if($row.JobName -ne $LastJobName){$ExecutionCount = 0;$LastJobName = $row.JobName}else{$ExecutionCount = $ExecutionCount+1};if($row.RunStatus -ne 1){"<tr><td>$($row.JobName)</td><td>$($row.JobEnabled)</td>"+`
-	"<td "+$(if($row.RunStatus -ne 1){if(($ExecutionCount -eq 0) -and ($row.JobName -Match "HOST_*")){"class=sev5";$jobseverity = 5}else{"class=sev4";if($jobseverity -lt 4){$jobseverity=2}}})+">$($row.RunStatus_Descr)</td>"+`
+	"<td "+$(if($row.RunStatus -ne 1){if($ExecutionCount -eq 0){"class=sev5";$jobseverity = 5}else{"class=sev4";if($jobseverity -lt 4){$jobseverity=4}}})+">$($row.RunStatus_Descr)</td>"+`
 	"<td>"+$($duration = $row.DurationSeconds;if($duration -lt 60){"$duration seconds"}elseif($duration -ge 60 -and $duration -lt 3600){$("{0:N2}" -f $($duration / 60))+" minutes"}else{$("{0:N2}" -f $($duration / 3600))+" hours"})+"</td>"+`
 	"<td>$($row.RunDateTime)</td></tr>"}
 	}
 	)
-	
+
+   
+
 	$jobString = $JobHeader + $jobString + "</table></td></tr>"
 	}
 	else
@@ -180,8 +188,17 @@ foreach ($server in $Servers)
                 #Write-Host $OS
 				try
 				{
-					$RealOS = (gwmi -ComputerName $OS -Class Win32_ComputerSystem -ErrorAction Stop)
-					$OS = $RealOS.Name
+                    try
+                    {
+					    $RealOS = (gwmi -ComputerName $OS -Class Win32_ComputerSystem -ErrorAction Stop)
+					    $OS = $RealOS.Name
+                    }
+                    catch
+                    {
+                        $OS += ".mechbank.com"
+                        $RealOS = (gwmi -ComputerName $OS -Class Win32_ComputerSystem -ErrorAction Stop)
+					    $OS = $RealOS.Name + ".mechbank.com"
+                    }
 				
 					Get-WmiObject -ComputerName $OS -Class Win32_Volume -Filter 'DriveType = 3' -ErrorAction Stop | %{$Volumes+= $_}
 					if($OSDisk.ContainsKey($OS) -eq $false)
@@ -193,7 +210,10 @@ foreach ($server in $Servers)
 				}
 				catch
 				{
-					$OSDisk.Add($OS, $null)
+					if($OSDisk.ContainsKey($OS) -eq $false)
+					{
+						$OSDisk.Add($OS, $null)
+					}
 					$diskseverity = 5
 				}
 			}
@@ -201,7 +221,7 @@ foreach ($server in $Servers)
 			$ThisVolume = $($Volumes | ?{$_.Name -eq $row.SubPath})
 			if($ThisVolume -ne $null)
 			{
-                Write-Host $ThisVolume.Name.Trim()
+                #Write-Host $ThisVolume.Name.Trim()
 				$PctFree = ($ThisVolume.FreeSpace/$ThisVolume.Capacity)*100
 				$localdiskseverity = 0
 				
@@ -432,7 +452,7 @@ $attachment = $head+$htmlstring+$foot+$legend
 #Write-Host $From
 #Write-Host $To
 
-#SendEmail_w_Attachment -MailBody $htmlbody -MailAttachment $attachment -MailServer $SMTPServer -MailSubject $Subject -MailFrom $From -MailTo $To -MailAttachmentName "DatabaseHealthReport"
+SendEmail_w_Attachment -MailBody $htmlbody -MailAttachment $attachment -MailServer $SMTPServer -MailSubject $Subject -MailFrom $From -MailTo $To -MailAttachmentName "DatabaseHealthReport"
 
 Out-File -FilePath "C:\PSScripts\DatabaseHealthReport.htm" -InputObject $attachment
 
